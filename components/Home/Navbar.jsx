@@ -1,0 +1,232 @@
+"use client";
+import React, { useState } from "react";
+import {
+  FiSearch,
+  FiUser,
+  FiHeart,
+  FiShoppingBag,
+  FiHeadphones,
+  FiMenu,
+  FiX,
+} from "react-icons/fi";
+import Link from "next/link";
+import TopBar from "./TopBar";
+import MobileBottomNav from "./MobileBottomNav";
+import { useCart } from "../../context/CartContext";
+
+export default function Navbar() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { openCart, cartItems } = useCart();
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  return (
+    <div className="w-full relative">
+      <TopBar />
+
+      {/* Main Header */}
+      <div className="bg-white border-b border-gray-100 relative z-20">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
+          {/* Logo */}
+          <div className="text-2xl font-bold text-font-title flex-1 text-center md:text-left md:flex-none">
+            <Link href="/">Company Logo</Link>
+          </div>
+
+          {/* Search Bar (Desktop) */}
+          <div className="hidden md:block flex-1 max-w-xl mx-auto w-full">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search our store"
+                className="w-full border border-gray-200 rounded-sm py-2 px-4 pr-10 focus:outline-none focus:border-primary text-sm"
+              />
+              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary">
+                <FiSearch size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* User Actions (Desktop) */}
+          <div className="hidden md:flex items-center gap-6 text-gray-600">
+            <Link
+              href="/account"
+              className="flex flex-col items-center gap-1 hover:text-primary transition-colors"
+            >
+              <FiUser size={22} />
+            </Link>
+            {/* <Link
+              href="/wishlist"
+              className="flex flex-col items-center gap-1 relative hover:text-primary transition-colors"
+            >
+              <FiHeart size={22} />
+              <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                0
+              </span>
+            </Link> */}
+            <button
+              onClick={openCart}
+              className="flex flex-col items-center gap-1 relative hover:text-primary transition-colors"
+            >
+              <FiShoppingBag size={22} />
+              <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                {cartItems.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Mobile Cart Icon (Always visible) */}
+          <div className="md:hidden">
+            <button
+              onClick={openCart}
+              className="relative text-gray-600 hover:text-primary"
+            >
+              <FiShoppingBag size={22} />
+              <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                {cartItems.length}
+              </span>
+            </button>
+          </div>
+
+          {/* Hamburger Menu (Mobile) */}
+          <button
+            className="md:hidden text-font-title hover:text-primary transition-colors"
+            onClick={toggleMobileMenu}
+          >
+            {isMobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Menu (Desktop) */}
+      <div className="hidden md:block bg-white border-b border-gray-100">
+        <div className="container mx-auto px-4 h-12 flex justify-between items-center">
+          {/* Menu Links */}
+          <nav className="flex items-center gap-8 font-bold text-sm text-font-title tracking-wide">
+            <Link href="/" className="hover:text-primary transition-colors">
+              HOME
+            </Link>
+            <Link href="/shop" className="hover:text-primary transition-colors">
+              SHOP
+            </Link>
+            <Link
+              href="/about"
+              className="hover:text-primary transition-colors"
+            >
+              ABOUT US
+            </Link>
+            <Link
+              href="/blogs"
+              className="hover:text-primary transition-colors"
+            >
+              BLOGS
+            </Link>
+            <Link
+              href="/contact"
+              className="hover:text-primary transition-colors"
+            >
+              CONTACT US
+            </Link>
+          </nav>
+
+          {/* Contact Phone */}
+          <div className="flex items-center gap-2 text-font-title text-sm font-medium">
+            <div className="w-8 h-8 rounded-full border border-secondary flex items-center justify-center text-secondary">
+              <FiHeadphones />
+            </div>
+            <span>(+91) 84899 02902</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu Sidebar & Overlay */}
+      <div
+        className={`md:hidden fixed inset-0 z-40 transition-visibility duration-300 ${
+          isMobileMenuOpen ? "visible" : "invisible"
+        }`}
+      >
+        {/* Overlay */}
+        <div
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+            isMobileMenuOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={toggleMobileMenu}
+        ></div>
+
+        {/* Sidebar Drawer */}
+        <div
+          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${
+            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="flex flex-col h-full">
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-bg-color">
+              <span className="font-bold text-lg text-font-title">Menu</span>
+              <button
+                onClick={toggleMobileMenu}
+                className="text-gray-500 hover:text-primary"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+
+            {/* Sidebar Links */}
+            <div className="flex-1 overflow-y-auto py-4">
+              <nav className="flex flex-col">
+                <Link
+                  href="/"
+                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
+                  onClick={toggleMobileMenu}
+                >
+                  HOME
+                </Link>
+                <Link
+                  href="/shop"
+                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
+                  onClick={toggleMobileMenu}
+                >
+                  SHOP
+                </Link>
+                <Link
+                  href="/about"
+                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
+                  onClick={toggleMobileMenu}
+                >
+                  ABOUT US
+                </Link>
+                <Link
+                  href="/blogs"
+                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
+                  onClick={toggleMobileMenu}
+                >
+                  BLOGS
+                </Link>
+                <Link
+                  href="/contact"
+                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
+                  onClick={toggleMobileMenu}
+                >
+                  CONTACT US
+                </Link>
+              </nav>
+            </div>
+
+            {/* Sidebar Footer */}
+            <div className="p-6 bg-gray-50 border-t border-gray-100">
+              <div className="flex items-center gap-3 text-font-title text-sm font-medium mb-4">
+                <div className="w-8 h-8 rounded-full border border-secondary flex items-center justify-center text-secondary bg-white">
+                  <FiHeadphones />
+                </div>
+                <span>(+91) 0000 0000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <MobileBottomNav />
+    </div>
+  );
+}
