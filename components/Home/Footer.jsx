@@ -10,7 +10,7 @@ import {
 export default function Footer() {
   return (
     <footer className="bg-bg-color pt-16 pb-8 border-t border-white">
-      <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         {/* Brand */}
         <div className="space-y-6">
           <h3 className="font-bold text-font-title text-xl">Company Logo</h3>
@@ -98,7 +98,7 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="border-t border-gray-200 pt-8 text-center">
-        <p className="text-gray-400 text-xs">Copywrite © 2025 by Fermentaa</p>
+        <p className="text-gray-400 text-xs">Copywrite © 2025 by TrueGut</p>
       </div>
     </footer>
   );

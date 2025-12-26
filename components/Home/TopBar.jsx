@@ -37,8 +37,8 @@ export default function TopBar() {
 
         {/* Right Contact */}
         <div className="flex items-center gap-2">
-          <a href="mailto:support@fermentaa.com" className="hover:underline">
-            support@fermentaa.com
+          <a href="mailto:support@truegut.com" className="hover:underline">
+            support@truegut.com
           </a>
         </div>
       </div>
