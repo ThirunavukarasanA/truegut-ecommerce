@@ -47,13 +47,13 @@ export default function Testimonials() {
 
   return (
     <section className="py-20 bg-bg-color/30 relative">
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
         <SectionHeading
           subheading="HAPPY CUSTOMERS"
           heading="Our testimonials"
         />
 
-        <div className="max-w-5xl mx-auto relative px-8 md:px-12">
+        <div className="max-w-5xl mx-auto relative px-8">
           {/* Custom Navigation Arrows */}
           <button
             ref={prevRef}

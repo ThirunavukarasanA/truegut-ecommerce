@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useRef } from "react";
 import SectionHeading from "@/components/Common/SectionHeading";
 import ProductCard from "@/components/Common/ProductCard";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -71,19 +71,40 @@ const PRODUCTS = [
 ];
 
 export default function BestSellers() {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+
   return (
     <section className="py-20 bg-white group/slider relative">
-      <div className="container mx-auto px-4 relative">
+      <div className="max-w-7xl mx-auto px-4 relative">
         <SectionHeading subheading="ORGANIC FOODS" heading="Best Sellers" />
 
-        <div className="relative mt-10">
+        <div className="max-w-7xl mx-auto relative px-8 md:px-12 mt-10">
+          {/* Custom Navigation Arrows */}
+          <button
+            ref={prevRef}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
+          >
+            <FiChevronLeft size={24} />
+          </button>
+          <button
+            ref={nextRef}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
+          >
+            <FiChevronRight size={24} />
+          </button>
+
           <Swiper
             modules={[Navigation]}
             spaceBetween={30}
             slidesPerView={1}
             navigation={{
-              nextEl: ".swiper-button-next-custom",
-              prevEl: ".swiper-button-prev-custom",
+              prevEl: prevRef.current,
+              nextEl: nextRef.current,
+            }}
+            onBeforeInit={(swiper) => {
+              swiper.params.navigation.prevEl = prevRef.current;
+              swiper.params.navigation.nextEl = nextRef.current;
             }}
             breakpoints={{
               640: {
@@ -104,14 +125,6 @@ export default function BestSellers() {
               </SwiperSlide>
             ))}
           </Swiper>
-
-          {/* Navigation Buttons - Show on Group Hover */}
-          <button className="swiper-button-prev-custom absolute -left-4 top-1/2 -translate-y-1/2 -translate-x-1/2 lg:-translate-x-full z-10 w-10 h-10 flex items-center justify-center hover:text-white hover:bg-primary duration-300 group-hover/slider:opacity-100 cursor-pointer bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30">
-            <FiChevronLeft size={24} />
-          </button>
-          <button className="swiper-button-next-custom absolute -right-4 top-1/2 -translate-y-1/2 translate-x-1/2 lg:translate-x-full z-10 w-10 h-10 flex items-center justify-center hover:text-white hover:bg-primary duration-300 group-hover/slider:opacity-100 cursor-pointer bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30">
-            <FiChevronRight size={24} />
-          </button>
         </div>
       </div>
     </section>
