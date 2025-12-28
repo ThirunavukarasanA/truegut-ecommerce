@@ -3,12 +3,14 @@
 import React, { useRef } from "react";
 import SectionHeading from "@/components/Common/SectionHeading";
 import { FaQuoteLeft, FaQuoteRight } from "react-icons/fa";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Navigation } from "swiper/modules";
+import { Autoplay, Navigation, Pagination } from "swiper/modules";
 
 // Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
+import "swiper/css/pagination";
 
 const REVIEWS = [
   {
@@ -53,23 +55,23 @@ export default function Testimonials() {
           heading="Our testimonials"
         />
 
-        <div className="max-w-5xl mx-auto relative px-8">
+        <div className="max-w-5xl mx-auto relative px-8 pb-16">
           {/* Custom Navigation Arrows */}
           <button
             ref={prevRef}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-primary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
           >
-            &lt;
+            <FiChevronLeft size={24} />
           </button>
           <button
             ref={nextRef}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
           >
-            &gt;
+            <FiChevronRight size={24} />
           </button>
 
           <Swiper
-            modules={[Autoplay, Navigation]}
+            modules={[Autoplay, Navigation, Pagination]}
             spaceBetween={30}
             slidesPerView={1}
             loop={true}
@@ -81,6 +83,12 @@ export default function Testimonials() {
               prevEl: prevRef.current,
               nextEl: nextRef.current,
             }}
+            pagination={{
+              clickable: true,
+              renderBullet: function (index, className) {
+                return '<span class="' + className + ' transition-all duration-300"></span>';
+              },
+            }}
             onBeforeInit={(swiper) => {
               swiper.params.navigation.prevEl = prevRef.current;
               swiper.params.navigation.nextEl = nextRef.current;
@@ -90,7 +98,7 @@ export default function Testimonials() {
                 slidesPerView: 2,
               },
             }}
-            className="pb-10"
+            className="pb-16!"
           >
             {REVIEWS.map((review) => (
               <SwiperSlide key={review.id}>
@@ -125,6 +133,22 @@ export default function Testimonials() {
               </SwiperSlide>
             ))}
           </Swiper>
+
+          <style jsx global>{`
+            .swiper-pagination-bullet {
+              width: 8px;
+              height: 8px;
+              background: #d1d5db; /* gray-300 */
+              opacity: 1;
+              border-radius: 9999px;
+              transition: all 0.3s ease;
+            }
+            .swiper-pagination-bullet-active {
+              width: 24px;
+              background-color: var(--color-secondary, #ea580c);
+              border-radius: 9999px;
+            }
+          `}</style>
         </div>
       </div>
     </section>

@@ -3,8 +3,8 @@ import { FiSend } from "react-icons/fi";
 
 export default function Newsletter() {
   return (
-    <section className="bg-primary py-16 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4">
+    <section className="py-20 md:px px-6">
+      <div className="bg-primary py-16 border overflow-hidden max-w-7xl mx-auto rounded-4xl px-5">
         <div className="relative">
           {/* Decorative elements */}
           <div className="absolute top-0 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
@@ -26,9 +26,9 @@ export default function Newsletter() {
                 <input
                   type="email"
                   placeholder="example.jpg@mail.com"
-                  className="flex-1 bg-white items-center h-12 px-6 text-sm text-gray-700 outline-none rounded-sm border-none placeholder:text-gray-300"
+                  className="flex-1 bg-white items-center py-3.5 px-6 text-sm text-gray-700 outline-none rounded-sm border-none placeholder:text-gray-300"
                 />
-                <button className="bg-[#e05d2b] border border-white/20 text-white font-bold text-xs px-8 h-12 uppercase tracking-wider hover:bg-white hover:text-primary transition-colors rounded-sm">
+                <button className="bg-secondary border border-white/20 text-white font-bold text-xs px-8 py-3.5 uppercase tracking-wider hover:bg-white hover:text-primary transition-colors rounded-sm">
                   Subscribe
                 </button>
               </form>

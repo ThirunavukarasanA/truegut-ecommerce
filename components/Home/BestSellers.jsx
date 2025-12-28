@@ -78,7 +78,13 @@ export default function BestSellers() {
   return (
     <section className="py-20 group/slider relative">
       <div className="max-w-7xl mx-auto px-4 relative">
-        <SectionHeading subheading="ORGANIC FOODS" heading="Best Sellers" />
+        {/* <SectionHeading subheading="ORGANIC FOODS" heading="Best Sellers" /> */}
+        <div className="mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold italic text-primary uppercase tracking-wide">
+            Live Microbial Starters
+          </h2>
+        </div>
+
 
         <div className="max-w-7xl mx-auto relative px-8 md:px-12 mt-10">
           {/* Custom Navigation Arrows */}
@@ -124,7 +130,7 @@ export default function BestSellers() {
                 slidesPerView: 3,
               },
             }}
-            className="!pb-16"
+            className="pb-16!"
           >
             {PRODUCTS.map((product) => (
               <SwiperSlide key={product.id}>
@@ -132,7 +138,7 @@ export default function BestSellers() {
               </SwiperSlide>
             ))}
           </Swiper>
-          
+
           <style jsx global>{`
             .swiper-pagination-bullet {
               width: 8px;

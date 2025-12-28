@@ -56,7 +56,7 @@ const ProbioticIntelligence = () => {
                     {cards.map((card) => (
                         <div
                             key={card.id}
-                            className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 h-full flex flex-col hover:shadow-md transition-shadow"
+                            className="bg-white rounded-4xl p-8 shadow-sm border border-gray-100 h-full flex flex-col hover:shadow-md transition-shadow"
                         >
                             {/* Icon */}
                             <div className="mb-6">
