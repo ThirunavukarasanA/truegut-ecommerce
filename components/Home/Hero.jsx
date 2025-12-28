@@ -6,21 +6,21 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 const SLIDES = [
   {
     id: 1,
-    image: "/images/banners/banner1.png",
-    subheading: "Fresh & Healthy Food - 2025",
-    heading: "ORGANIC",
+    image: "/images/banners/banner3.jpg",
+    subheading: "Medical-Grade Cultures",
+    heading: "Bio-Active Marketplace",
     description:
-      "Organic fermented foods without the use of synthetic chemicals, such as human-made pesticides.",
-    buttonText: "Show Now",
+      "Flat 20% Discount Auto-Applied + Wallet Benefits.",
+    buttonText: "",
   },
   {
     id: 2,
-    image: "/images/banners/banner2.png",
+    image: "/images/banners/banner3.jpg",
     subheading: "Best Summer Offer",
     heading: "HEALTHY",
     description:
       "Get the best organic vegetables and fruits directly from the farm to your table.",
-    buttonText: "Shop Deal",
+    buttonText: "",
   },
 ];
 
@@ -75,9 +75,9 @@ export default function Hero() {
 
   return (
     <div
-      className="w-full relative overflow-hidden h-[500px] md:h-[650px] flex items-center group bg-bg-color"
+      className="w-full max-w-7xl md:rounded-4xl mx-auto mt-20 md:mt-32 relative overflow-hidden h-[300px] md:h-[500px] sm:h-[300px] flex items-center group bg-bg-color"
       onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
+      onTouchMove={onTouchMove} 
       onTouchEnd={onTouchEnd}
     >
       {/* Carousel Container */}
@@ -96,26 +96,27 @@ export default function Hero() {
                 src={slide.image}
                 alt={slide.heading}
                 fill
-                className="object-cover object-center md:object-right" // Focus on center mobile, right on desktop if image has whitespace on left
+                className="object-cover object-center md:object-right"
                 priority={slide.id === 1}
               />
             </div>
 
             {/* Content Overlay */}
-            <div className="container mx-auto px-4 relative z-10 grid grid-cols-1 md:grid-cols-2 h-full items-center">
+            <div className="container mx-auto px-20 relative z-10 grid grid-cols-1 md:grid-cols-2 h-full items-center">
               <div className="max-w-lg space-y-4 md:space-y-6 pt-10 md:pt-0 text-center md:text-left flex flex-col items-center md:items-start">
-                <h3 className="text-secondary font-bold tracking-wide text-xs md:text-base uppercase animate-fade-in-up">
+                <h3 className="text-white font-jark italic py-2 px-4 bg-secondary rounded-full font-bold tracking-wide text-xs md:text-xs uppercase animate-fade-in-up">
                   {slide.subheading}
                 </h3>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-font-title tracking-tight leading-tighter animate-fade-in-up delay-100">
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-semibold text-white font-jark italic tracking-tight leading-tighter animate-fade-in-up delay-100">
                   {slide.heading}
                 </h1>
-                <p className="text-gray-600 text-sm md:text-lg leading-relaxed max-w-md mx-auto md:mx-0 animate-fade-in-up delay-200 lg:pr-10">
+                <p className="text-white/20 font-jark italic text-sm md:text-base leading-relaxed max-w-md mx-auto md:mx-0 animate-fade-in-up delay-200 lg:pr-10">
                   {slide.description}
                 </p>
-                <button className="bg-secondary hover:bg-primary text-white px-8 py-3 text-sm font-bold uppercase tracking-wider hover:bg-opacity-90 transition-colors rounded-sm shadow-lg shadow-secondary/20 animate-fade-in-up">
-                  {slide.buttonText}
-                </button>
+                {slide.buttonText &&
+                  <button className="bg-secondary hover:bg-primary text-white px-8 py-3 text-sm font-bold uppercase tracking-wider hover:bg-opacity-90 transition-colors rounded-sm shadow-lg shadow-secondary/20 animate-fade-in-up">
+                    {slide.buttonText}
+                  </button>}
               </div>
               {/* Empty column for spacing against the image subject */}
               <div></div>
@@ -144,9 +145,8 @@ export default function Hero() {
           <button
             key={index}
             onClick={() => setCurrentSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all ${
-              currentSlide === index ? "bg-primary w-6" : "bg-gray-500"
-            }`}
+            className={`w-2 h-2 rounded-full cursor-pointer transition-all ${currentSlide === index ? "bg-secondary w-6" : "bg-white"
+              }`}
           />
         ))}
       </div>

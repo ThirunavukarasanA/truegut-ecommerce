@@ -6,7 +6,7 @@ export default function SectionHeading({ subheading, heading }) {
       <h4 className="text-primary font-bold text-xs uppercase tracking-widest mb-2">
         {subheading}
       </h4>
-      <h2 className="text-3xl md:text-4xl font-bold text-font-title">
+      <h2 className="text-xl md:text-2xl font-jark font-medium text-gray-500 uppercase tracking-widest">
         {heading}
       </h2>
     </div>

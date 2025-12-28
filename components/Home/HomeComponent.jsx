@@ -7,22 +7,30 @@ import Testimonials from "./Testimonials";
 import BlogSection from "./BlogSection";
 import Newsletter from "./Newsletter";
 import Footer from "./Footer";
+import TrueGutProtocol from "./TrueGutProtocol";
+import ProbioticIntelligence from "./ProbioticIntelligence";
 import RevealOnScroll from "../Common/RevealOnScroll";
 
 export default function HomeComponent() {
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col font-sans bg-gray-50">
       <Navbar />
       <main>
         <RevealOnScroll>
           <Hero />
         </RevealOnScroll>
+        <RevealOnScroll delay={0.2}>
+          <TrueGutProtocol />
+        </RevealOnScroll>
         <RevealOnScroll delay={0.3}>
           <BestSellers />
         </RevealOnScroll>
         <RevealOnScroll delay={0.3}>
-          <Features />
+          <ProbioticIntelligence />
         </RevealOnScroll>
+        {/* <RevealOnScroll delay={0.3}>
+          <Features />
+        </RevealOnScroll> */}
         <RevealOnScroll delay={0.3}>
           <Testimonials />
         </RevealOnScroll>

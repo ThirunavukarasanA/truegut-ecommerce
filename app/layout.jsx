@@ -1,4 +1,5 @@
 import { Poppins } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import Providers from "../components/Providers";
 
@@ -8,6 +9,11 @@ export const poppins = Poppins({
   variable: "--font-poppins",
 });
 
+export const plusJakartaSans = Plus_Jakarta_Sans({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta-sans",
+});
 export const metadata = {
   title: "TrueGut",
   description: "TrueGutp",
@@ -16,7 +22,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${poppins.variable} antialiased`}>
+      <body className={`${poppins.variable} ${plusJakartaSans.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

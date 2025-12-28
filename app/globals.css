@@ -8,14 +8,17 @@
 @theme inline {
   /* --color-background: var(--background); */
   /* --color-foreground: var(--foreground); */
-  --color-primary: #e86936;
-  --color-secondary: #4b9634;
+  /* --color-primary: #ea580c; */
+  /* --color-secondary: #042f2c; */
+  --color-primary: #042f2c;
+  --color-secondary: #ea580c;
   --color-font-title: #333333;
   --color-bg-color: #faf5f1;
   --color-card-bg: #ebebeb;
   --color-white: #ffffff;
   --color-black: #000000;
   --font-sans: var(--font-poppins);
+  --font-jark: var(--font-plusJakartaSans);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         {/* Brand */}
         <div className="space-y-6">
-          <h3 className="font-bold text-font-title text-xl">Company Logo</h3>
+          <h3 className="font-bold text-primary text-xl">true<span className="text-secondary">gut</span></h3>
           <p className="text-gray-500 text-sm leading-relaxed">
             There are many variations of passages of Lorem Ipsum available, but
             the majority have suffered alteration in some.
@@ -54,15 +54,15 @@ export default function Footer() {
 
         {/* Categories */}
         <div className="md:pl-8">
-          <h4 className="font-bold text-secondary text-sm mb-6">Categories</h4>
+          <h4 className="font-bold text-primary text-sm mb-6">Categories</h4>
           <ul className="space-y-4 text-gray-500 text-sm">
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Kelif
             </li>
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Kombucha
             </li>
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Kimchi
             </li>
           </ul>
@@ -70,21 +70,21 @@ export default function Footer() {
 
         {/* Account */}
         <div>
-          <h4 className="font-bold text-secondary text-sm mb-6">Account</h4>
+          <h4 className="font-bold text-primary text-sm mb-6">Account</h4>
           <ul className="space-y-4 text-gray-500 text-sm">
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               My cart
             </li>
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Wishlist
             </li>
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Sign in
             </li>
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Shipping details
             </li>
-            <li className="hover:text-primary cursor-pointer transition-colors">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
               Help center
             </li>
           </ul>

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FiSearch,
   FiUser,
@@ -9,12 +9,22 @@ import {
   FiMenu,
   FiX,
 } from "react-icons/fi";
+import { FaBagShopping } from "react-icons/fa6";
 import Link from "next/link";
 import TopBar from "./TopBar";
 import MobileBottomNav from "./MobileBottomNav";
 import { useCart } from "../../context/CartContext";
+import { FaUserAlt } from "react-icons/fa";
 
 export default function Navbar() {
+  const [scrollPosition, setScrollPosition] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { openCart, cartItems } = useCart();
 
@@ -24,18 +34,18 @@ export default function Navbar() {
 
   return (
     <div className="w-full relative">
-      <TopBar />
+      {/* <TopBar /> */}
 
       {/* Main Header */}
-      <div className="bg-white border-b border-gray-100 relative z-20">
+      <div className={`fixed w-full top-0 z-50 border-b border-gray-200 ${scrollPosition ? "shadow-lg bg-white/80 backdrop-blur" : "bg-white"}`}>
         <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
           {/* Logo */}
           <div className="text-2xl font-bold text-font-title flex-1 text-center md:text-left md:flex-none">
-            <Link href="/">Company Logo</Link>
+            <Link href="/" className="text-primary">true<span className="text-secondary">gut</span></Link>
           </div>
 
           {/* Search Bar (Desktop) */}
-          <div className="hidden md:block flex-1 max-w-xl mx-auto w-full">
+          {/* <div className="hidden md:block flex-1 max-w-xl mx-auto w-full">
             <div className="relative">
               <input
                 type="text"
@@ -46,6 +56,37 @@ export default function Navbar() {
                 <FiSearch size={18} />
               </button>
             </div>
+          </div> */}
+          <div className="hidden md:block">
+            <div className="container mx-auto px-4 h-12 flex justify-between items-center">
+              {/* Menu Links */}
+              <nav className="flex items-center gap-8 font-bold text-sm text-font-title tracking-wide">
+                <Link href="/" className="hover:text-primary transition-colors">
+                  HOME
+                </Link>
+                <Link href="/shop" className="hover:text-primary transition-colors">
+                  SHOP
+                </Link>
+                <Link
+                  href="/about"
+                  className="hover:text-primary transition-colors"
+                >
+                  ABOUT US
+                </Link>
+                <Link
+                  href="/blogs"
+                  className="hover:text-primary transition-colors"
+                >
+                  BLOGS
+                </Link>
+                <Link
+                  href="/contact"
+                  className="hover:text-primary transition-colors"
+                >
+                  CONTACT US
+                </Link>
+              </nav>
+            </div>
           </div>
 
           {/* User Actions (Desktop) */}
@@ -54,7 +95,7 @@ export default function Navbar() {
               href="/account"
               className="flex flex-col items-center gap-1 hover:text-primary transition-colors"
             >
-              <FiUser size={22} />
+              <FaUserAlt size={22} />
             </Link>
             {/* <Link
               href="/wishlist"
@@ -67,10 +108,10 @@ export default function Navbar() {
             </Link> */}
             <button
               onClick={openCart}
-              className="flex flex-col items-center gap-1 relative hover:text-primary transition-colors"
+              className="flex flex-col items-center gap-1 bg-primary cursor-pointer relative text-white hover:text-secondary transition-colors rounded-full p-3"
             >
-              <FiShoppingBag size={22} />
-              <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+              <FaBagShopping size={22} />
+              <span className="absolute top-0 -right-1 ring-2 ring-white bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
                 {cartItems.length}
               </span>
             </button>
@@ -80,10 +121,10 @@ export default function Navbar() {
           <div className="md:hidden">
             <button
               onClick={openCart}
-              className="relative text-gray-600 hover:text-primary"
+              className="relative text-white bg-primary rounded-full p-3 cursor-pointer"
             >
-              <FiShoppingBag size={22} />
-              <span className="absolute -top-2 -right-2 bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+              <FaBagShopping size={22} />
+              <span className="absolute top-0 -right-1 ring-2 ring-white bg-secondary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
                 {cartItems.length}
               </span>
             </button>
@@ -99,66 +140,24 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Navigation Menu (Desktop) */}
-      <div className="hidden md:block bg-white border-b border-gray-100">
-        <div className="container mx-auto px-4 h-12 flex justify-between items-center">
-          {/* Menu Links */}
-          <nav className="flex items-center gap-8 font-bold text-sm text-font-title tracking-wide">
-            <Link href="/" className="hover:text-primary transition-colors">
-              HOME
-            </Link>
-            <Link href="/shop" className="hover:text-primary transition-colors">
-              SHOP
-            </Link>
-            <Link
-              href="/about"
-              className="hover:text-primary transition-colors"
-            >
-              ABOUT US
-            </Link>
-            <Link
-              href="/blogs"
-              className="hover:text-primary transition-colors"
-            >
-              BLOGS
-            </Link>
-            <Link
-              href="/contact"
-              className="hover:text-primary transition-colors"
-            >
-              CONTACT US
-            </Link>
-          </nav>
 
-          {/* Contact Phone */}
-          <div className="flex items-center gap-2 text-font-title text-sm font-medium">
-            <div className="w-8 h-8 rounded-full border border-secondary flex items-center justify-center text-secondary">
-              <FiHeadphones />
-            </div>
-            <span>(+91) 84899 02902</span>
-          </div>
-        </div>
-      </div>
 
       {/* Mobile Menu Sidebar & Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-40 transition-visibility duration-300 ${
-          isMobileMenuOpen ? "visible" : "invisible"
-        }`}
+        className={`md:hidden fixed inset-0 z-40 transition-visibility duration-300 ${isMobileMenuOpen ? "visible" : "invisible"
+          }`}
       >
         {/* Overlay */}
         <div
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-            isMobileMenuOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isMobileMenuOpen ? "opacity-100" : "opacity-0"
+            }`}
           onClick={toggleMobileMenu}
         ></div>
 
         {/* Sidebar Drawer */}
         <div
-          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${
-            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex flex-col h-full">
             {/* Sidebar Header */}

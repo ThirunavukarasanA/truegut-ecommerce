@@ -3,12 +3,13 @@ import React, { useRef } from "react";
 import SectionHeading from "@/components/Common/SectionHeading";
 import ProductCard from "@/components/Common/ProductCard";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
+import { Navigation, Pagination } from "swiper/modules";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 // Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
+import "swiper/css/pagination";
 
 const PRODUCTS = [
   {
@@ -75,7 +76,7 @@ export default function BestSellers() {
   const nextRef = useRef(null);
 
   return (
-    <section className="py-20 bg-white group/slider relative">
+    <section className="py-20 group/slider relative">
       <div className="max-w-7xl mx-auto px-4 relative">
         <SectionHeading subheading="ORGANIC FOODS" heading="Best Sellers" />
 
@@ -83,24 +84,30 @@ export default function BestSellers() {
           {/* Custom Navigation Arrows */}
           <button
             ref={prevRef}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
           >
             <FiChevronLeft size={24} />
           </button>
           <button
             ref={nextRef}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 items-center justify-center bg-secondary text-white rounded-md shadow-lg opacity-80 hover:opacity-100 transition-opacity disabled:opacity-30"
           >
             <FiChevronRight size={24} />
           </button>
 
           <Swiper
-            modules={[Navigation]}
+            modules={[Navigation, Pagination]}
             spaceBetween={30}
             slidesPerView={1}
             navigation={{
               prevEl: prevRef.current,
               nextEl: nextRef.current,
+            }}
+            pagination={{
+              clickable: true,
+              renderBullet: function (index, className) {
+                return '<span class="' + className + ' transition-all duration-300"></span>';
+              },
             }}
             onBeforeInit={(swiper) => {
               swiper.params.navigation.prevEl = prevRef.current;
@@ -114,10 +121,10 @@ export default function BestSellers() {
                 slidesPerView: 2,
               },
               1024: {
-                slidesPerView: 4,
+                slidesPerView: 3,
               },
             }}
-            className="!pb-10"
+            className="!pb-16"
           >
             {PRODUCTS.map((product) => (
               <SwiperSlide key={product.id}>
@@ -125,6 +132,22 @@ export default function BestSellers() {
               </SwiperSlide>
             ))}
           </Swiper>
+          
+          <style jsx global>{`
+            .swiper-pagination-bullet {
+              width: 8px;
+              height: 8px;
+              background: #d1d5db; /* gray-300 */
+              opacity: 1;
+              border-radius: 9999px;
+              transition: all 0.3s ease;
+            }
+            .swiper-pagination-bullet-active {
+              width: 24px;
+              background-color: var(--color-secondary, #ea580c);
+              border-radius: 9999px;
+            }
+          `}</style>
         </div>
       </div>
     </section>

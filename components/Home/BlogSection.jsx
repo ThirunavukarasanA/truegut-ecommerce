@@ -51,7 +51,7 @@ export default function BlogSection() {
   const nextRef = useRef(null);
 
   return (
-    <section className="py-20 bg-white group/slider relative">
+    <section className="py-20 group/slider relative">
       <div className="max-w-7xl mx-auto px-4 relative">
         <SectionHeading
           subheading="ARTICLES AND NEWS"
@@ -97,21 +97,21 @@ export default function BlogSection() {
           >
             {BLOGS.map((blog) => (
               <SwiperSlide key={blog.id}>
-                <div className="group cursor-pointer">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden mb-6">
+                <div className="group cursor-pointer bg-white shadow-xl pb-10 rounded-xl">
+                  <div className="relative p-3 aspect-[4/3] w-full overflow-hidden mb-6">
                     <Image
                       src={blog.image}
                       alt={blog.title}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110 group-hover:rounded-xl rounded-xl"
                     />
-                    <div className="absolute top-4 left-4 bg-white text-font-title text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
+                    <div className="absolute rounded-2xl top-4 left-4 bg-white text-font-title text-[10px] font-bold px-3 py-1 uppercase tracking-wider">
                       {blog.date}
                     </div>
                   </div>
 
                   <div className="text-center px-4">
-                    <h3 className="text-base font-bold text-font-title mb-3 group-hover:text-primary transition-colors">
+                    <h3 className="text-base font-bold text-font-title mb-3 group-hover:text-secondary transition-colors">
                       {blog.title}
                     </h3>
                     <p className="text-gray-400 text-xs leading-relaxed mb-4">
