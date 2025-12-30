@@ -4,7 +4,6 @@ export const metadata = {
     default: `TrueGut`,
   },
   keywords: "TrueGut | Fermentaa | Organic | Fermented | Collections",
-  robots: "noindex, nofollow",
   description: "Explore our range of organic and fermented products",
   icons: {
     icon: "../favicon.ico",
