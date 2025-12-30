@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         {/* Brand */}
         <div className="space-y-6">
-          <h3 className="font-bold text-primary text-xl">true<span className="text-secondary">gut</span></h3>
+          <h3 className="font-bold text-primary text-xl">True<span className="text-secondary">gut</span></h3>
           <p className="text-gray-500 text-sm leading-relaxed">
             There are many variations of passages of Lorem Ipsum available, but
             the majority have suffered alteration in some.

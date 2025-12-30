@@ -19,7 +19,7 @@ export default function ProductCard({ product }) {
 
       {/* Image Container */}
       <div className="relative rounded-2xl overflow-hidden mb-6 aspect-4/3 w-full bg-gray-50">
-        <Link href={`/product/${product.id}`} className="block w-full h-full">
+        <Link href={`/collections/${product.slug}`} className="block w-full h-full">
           <Image
             src={product.image}
             alt={product.name}
@@ -32,26 +32,26 @@ export default function ProductCard({ product }) {
       {/* Content */}
       <div className="flex flex-col flex-1">
         <h3 className="font-bold italic text-primary text-xl mb-2 uppercase tracking-tight">
-          <Link href={`/product/${product.id}`}>{product.name}</Link>
+          <Link href={`/collections/${product.slug}`}>{product.name}</Link>
         </h3>
-        
+
         {/* Price and Action Row */}
         <div className="mt-auto flex items-end justify-between">
-            <div className="flex flex-col gap-1">
-                 <span className="font-bold text-font-title text-2xl">
-                    ₹{product.price}
-                </span>
-                <Link href="#" className="text-[10px] font-bold text-green-600 underline uppercase tracking-wider hover:text-primary transition-colors">
-                    VIEW LAB CERTIFICATE
-                </Link>
-            </div>
-          
-            <button
-                onClick={() => addToCart(product)}
-                className="bg-secondary text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
-             >
-                ADD TO BAG
-            </button>
+          <div className="flex flex-col gap-1">
+            <span className="font-bold text-font-title text-2xl">
+              ₹{product.price}
+            </span>
+            <Link href="#" className="text-[10px] font-bold text-green-600 underline uppercase tracking-wider hover:text-primary transition-colors">
+              VIEW LAB CERTIFICATE
+            </Link>
+          </div>
+
+          <button
+            onClick={() => addToCart(product)}
+            className="bg-secondary text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
+          >
+            ADD TO BAG
+          </button>
         </div>
       </div>
     </div>

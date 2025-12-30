@@ -1,0 +1,173 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { MdClose } from "react-icons/md";
+import toast from "react-hot-toast";
+import AdminInput from "@/components/admin/common/AdminInput";
+
+import AdminConfirmModal from "@/components/admin/common/AdminConfirmModal";
+
+export default function CategoryModal({ isOpen, onClose, editMode, category, onSave, maxWidth = "max-w-md" }) {
+     const [formData, setFormData] = useState({ name: "", description: "", isActive: true });
+     const [submitting, setSubmitting] = useState(false);
+     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+     useEffect(() => {
+          if (category) {
+               setFormData({
+                    ...category,
+                    name: category.name || "",
+                    description: category.description || "",
+                    isActive: category.isActive !== undefined ? category.isActive : true
+               });
+          } else {
+               setFormData({ name: "", description: "", isActive: true });
+          }
+     }, [category]);
+
+     // Lock body scroll when modal is open
+     useEffect(() => {
+          if (isOpen) {
+               document.body.style.overflow = 'hidden';
+          } else {
+               document.body.style.overflow = 'unset';
+          }
+          return () => { document.body.style.overflow = 'unset'; };
+     }, [isOpen]);
+
+     const handleSubmit = (e) => {
+          e.preventDefault();
+          if (!formData.name.trim()) {
+               return toast.error("Category name is required");
+          }
+          setIsConfirmOpen(true);
+     };
+
+     const confirmSubmit = async () => {
+          setSubmitting(true);
+          const toastId = toast.loading(editMode ? "Updating category..." : "Creating category...");
+
+          try {
+               const url = editMode
+                    ? `/api/admin/catalog/categories/${category._id}`
+                    : "/api/admin/catalog/categories";
+               const method = editMode ? "PATCH" : "POST";
+
+               const res = await fetch(url, {
+                    method: method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+               });
+               const data = await res.json();
+
+               if (data.success) {
+                    onSave(data.data, editMode);
+                    toast.success(`Category ${editMode ? "updated" : "created"} successfully`, { id: toastId });
+                    onClose();
+               } else {
+                    toast.error(data.error || "Operation failed", { id: toastId });
+               }
+          } catch (error) {
+               toast.error("An error occurred during save", { id: toastId });
+          } finally {
+               setSubmitting(false);
+               setIsConfirmOpen(false);
+          }
+     };
+
+     if (!isOpen) return null;
+
+     return (
+          <>
+               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className={`bg-white rounded-[2.5rem] w-full ${maxWidth} shadow-2xl animate-in custom-zoom-in duration-300 overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]`}>
+                         {/* Modal Header */}
+                         <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
+                              <div>
+                                   <h3 className="text-2xl font-light text-gray-800 tracking-tight">{editMode ? 'Update' : 'New'} Category</h3>
+                                   <p className="text-[10px] text-gray-400 font-light uppercase tracking-widest mt-2">Define category properties and visibility</p>
+                              </div>
+                              <button
+                                   onClick={onClose}
+                                   className="p-3 bg-white text-gray-400 hover:text-gray-900 rounded-full shadow-sm hover:shadow-md transition-all"
+                              >
+                                   <MdClose size={24} />
+                              </button>
+                         </div>
+
+                         {/* Scrollable Form Body */}
+                         <div className="flex-grow overflow-y-auto p-8 lg:p-10 scrollbar-thin scrollbar-thumb-gray-100 scrollbar-track-transparent">
+                              <form id="category-form" onSubmit={handleSubmit} className="space-y-8">
+                                   <AdminInput
+                                        label="Category Name"
+                                        required
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="e.g. Organic Beverages"
+                                   />
+
+                                   <div>
+                                        <label className="text-[10px] font-light text-gray-400 uppercase tracking-widest ml-1 mb-3 block">Category Description</label>
+                                        <textarea
+                                             value={formData.description}
+                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                             className="w-full bg-white border border-gray-100 rounded-[1.25rem] px-6 py-4 outline-none focus:border-purple-600/30 focus:ring-4 focus:ring-purple-600/5 transition-all h-36 resize-none font-light text-gray-600 placeholder:text-gray-300 placeholder:font-light shadow-sm"
+                                             placeholder="Briefly describe what's inside..."
+                                        />
+                                   </div>
+
+                                   <div className="flex items-center justify-between p-6 bg-purple-50/30 rounded-[1.5rem] border border-purple-100/30">
+                                        <div>
+                                             <span className="block text-sm font-light text-gray-800">Active Status</span>
+                                             <span className="text-[10px] text-gray-400 font-light uppercase tracking-[0.1em]">Visible to customers if active</span>
+                                        </div>
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                             <input
+                                                  type="checkbox"
+                                                  checked={formData.isActive}
+                                                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                                  className="sr-only peer"
+                                             />
+                                             <div className="w-14 h-7 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-purple-100 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:start-[4px] after:bg-white after:border-gray-200 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 shadow-inner"></div>
+                                        </label>
+                                   </div>
+                              </form>
+                         </div>
+
+                         {/* Fixed Footer */}
+                         <div className="p-8 border-t border-gray-50 bg-gray-50/30 flex gap-4 flex-shrink-0">
+                              <button
+                                   type="button"
+                                   onClick={onClose}
+                                   className="flex-1 px-8 py-5 bg-white border border-gray-200 text-gray-400 font-light rounded-[1.25rem] hover:bg-gray-50 hover:text-gray-600 transition-all uppercase text-[11px] tracking-[0.2em]"
+                              >
+                                   Cancel
+                              </button>
+                              <button
+                                   type="submit"
+                                   form="category-form"
+                                   disabled={submitting}
+                                   className="flex-1 px-8 py-5 bg-purple-600 text-white font-light rounded-[1.25rem] hover:bg-purple-700 transition-all shadow-xl shadow-purple-200 disabled:opacity-50 uppercase text-[11px] tracking-[0.2em]"
+                              >
+                                   {submitting ? "Processing..." : editMode ? "Update" : "Create"}
+                              </button>
+                         </div>
+                    </div>
+               </div>
+
+               <AdminConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={confirmSubmit}
+                    title={editMode ? "ConfirmUpdate" : "ConfirmCreation"}
+                    message={editMode
+                         ? "Are you sure you want to update this category's details? This will affect all associated products."
+                         : "Are you ready to create this new category?"
+                    }
+                    type={editMode ? "info" : "success"}
+                    action={editMode ? "update" : "create"}
+                    confirmLabel={editMode ? "Update" : "Create"}
+               />
+          </>
+     );
+}

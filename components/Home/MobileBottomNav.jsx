@@ -7,7 +7,7 @@ import { useCart } from "../../context/CartContext";
 export default function MobileBottomNav() {
   const { openCart, cartItems } = useCart();
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-9999 md:hidden pb-safe bg-transparent pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden pb-safe bg-transparent pointer-events-none">
       <div className="relative pointer-events-auto">
         {/* Curved Background Container */}
         <div className="bg-[#023120] rounded-t-[3rem] pb-safe pt-2 px-6 shadow-[0_-5px_15px_rgba(0,0,0,0.1)]">
@@ -15,7 +15,7 @@ export default function MobileBottomNav() {
             
             {/* Left Side */}
             <Link
-              href="/shop"
+              href="/collections"
               className="flex flex-col items-center justify-center w-14 text-white hover:text-secondary transition-colors gap-1"
             >
               <BiStore size={22} />

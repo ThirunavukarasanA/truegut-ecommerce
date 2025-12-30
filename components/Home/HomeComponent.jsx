@@ -19,11 +19,11 @@ export default function HomeComponent() {
         <RevealOnScroll>
           <Hero />
         </RevealOnScroll>
-        <RevealOnScroll delay={0.2}>
-          <TrueGutProtocol />
-        </RevealOnScroll>
         <RevealOnScroll delay={0.3}>
           <BestSellers />
+        </RevealOnScroll>
+        <RevealOnScroll delay={0.3}>
+          <TrueGutProtocol />
         </RevealOnScroll>
         <RevealOnScroll delay={0.3}>
           <ProbioticIntelligence />
