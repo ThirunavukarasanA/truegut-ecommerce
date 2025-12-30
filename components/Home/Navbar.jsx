@@ -11,6 +11,7 @@ import {
 } from "react-icons/fi";
 import { FaBagShopping } from "react-icons/fa6";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import TopBar from "./TopBar";
 import MobileBottomNav from "./MobileBottomNav";
 import { useCart } from "../../context/CartContext";
@@ -40,6 +41,12 @@ export default function Navbar() {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const pathname = usePathname();
+  const isActive = (path) => {
+    if (path === "/") return pathname === "/";
+    return pathname.startsWith(path);
   };
 
   return (
@@ -88,33 +95,25 @@ export default function Navbar() {
             <div className="container mx-auto px-4 h-12 flex justify-between items-center">
               {/* Menu Links */}
               <nav className="flex items-center gap-8 font-bold text-sm text-font-title tracking-wide">
-                <Link href="/" className="hover:text-primary transition-colors">
-                  HOME
-                </Link>
-                <Link
-                  href="/collections"
-                  className="hover:text-primary transition-colors"
-                >
-                  SHOP
-                </Link>
-                <Link
-                  href="/about"
-                  className="hover:text-primary transition-colors"
-                >
-                  ABOUT US
-                </Link>
-                <Link
-                  href="/blogs"
-                  className="hover:text-primary transition-colors"
-                >
-                  BLOGS
-                </Link>
-                <Link
-                  href="/contact"
-                  className="hover:text-primary transition-colors"
-                >
-                  CONTACT US
-                </Link>
+                {[
+                  { name: "HOME", path: "/" },
+                  { name: "SHOP", path: "/collections" },
+                  { name: "ABOUT US", path: "/about" },
+                  { name: "BLOGS", path: "/blogs" },
+                  { name: "CONTACT US", path: "/contact" },
+                ].map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    className={`transition-colors ${
+                      isActive(link.path)
+                        ? "text-secondary"
+                        : "hover:text-primary"
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
               </nav>
             </div>
           </div>
@@ -205,41 +204,26 @@ export default function Navbar() {
             {/* Sidebar Links */}
             <div className="flex-1 overflow-y-auto py-4">
               <nav className="flex flex-col">
-                <Link
-                  href="/"
-                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
-                  onClick={toggleMobileMenu}
-                >
-                  HOME
-                </Link>
-                <Link
-                  href="/collections"
-                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
-                  onClick={toggleMobileMenu}
-                >
-                  SHOP
-                </Link>
-                <Link
-                  href="/about"
-                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
-                  onClick={toggleMobileMenu}
-                >
-                  ABOUT US
-                </Link>
-                <Link
-                  href="/blogs"
-                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
-                  onClick={toggleMobileMenu}
-                >
-                  BLOGS
-                </Link>
-                <Link
-                  href="/contact"
-                  className="px-6 py-3 font-medium text-gray-700 hover:bg-gray-50 hover:text-primary border-l-4 border-transparent hover:border-primary transition-all"
-                  onClick={toggleMobileMenu}
-                >
-                  CONTACT US
-                </Link>
+                {[
+                  { name: "HOME", path: "/" },
+                  { name: "SHOP", path: "/collections" },
+                  { name: "ABOUT US", path: "/about" },
+                  { name: "BLOGS", path: "/blogs" },
+                  { name: "CONTACT US", path: "/contact" },
+                ].map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    className={`px-6 py-3 font-medium border-l-4 transition-all ${
+                      isActive(link.path)
+                        ? "text-primary bg-primary/5 border-primary"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-primary border-transparent hover:border-primary"
+                    }`}
+                    onClick={toggleMobileMenu}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
               </nav>
             </div>
 
