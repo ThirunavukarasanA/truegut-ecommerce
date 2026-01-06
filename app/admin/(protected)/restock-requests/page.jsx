@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import AdminPageHeader from "@/components/Admin/common/AdminPageHeader";
+import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 // import AdminTable from "@/components/admin/common/AdminTable";
 import AdminTable from "@/components/admin/common/AdminTable";
 import { toast } from "react-hot-toast";
