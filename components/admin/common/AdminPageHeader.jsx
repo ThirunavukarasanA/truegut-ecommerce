@@ -22,7 +22,7 @@ export default function AdminPageHeader({ title, description, primaryAction, sec
                     {primaryAction && (
                          <button
                               onClick={primaryAction.onClick}
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-light shadow-lg shadow-purple-200 transition-all flex items-center gap-2 group"
+                              className="bg-primary hover:bg-secondary text-white px-6 py-3 rounded-2xl font-light shadow-lg shadow-gray-200 transition-all flex items-center gap-2 group"
                          >
                               {primaryAction.icon ? (
                                    <primaryAction.icon size={22} className="group-hover:rotate-90 transition-transform" />

@@ -7,7 +7,7 @@ import Navbar from "@/components/Home/Navbar";
 import MobileBottomNav from "@/components/Home/MobileBottomNav";
 import Footer from "@/components/Home/Footer";
 
-const blogs = [
+const BLOGS = [
   {
     id: 1,
     title: "The Magic of Fermentation: Why Your Gut Loves It",
@@ -16,7 +16,7 @@ const blogs = [
     category: "Health & Wellness",
     date: "Oct 12, 2024",
     author: "Dr. Sarah Roots",
-    image: "/images/blog-1.jpg", // Placeholder
+    image: "/images/blog-salad.png", // Placeholder
   },
   {
     id: 2,
@@ -26,7 +26,7 @@ const blogs = [
     category: "Food Culture",
     date: "Sep 28, 2024",
     author: "Chef Mike Ferment",
-    image: "/images/blog-2.jpg", // Placeholder
+    image: "/images/blog-veg.png", // Placeholder
   },
   {
     id: 3,
@@ -36,7 +36,7 @@ const blogs = [
     category: "Lifestyle",
     date: "Sep 15, 2024",
     author: "Lisa Green",
-    image: "/images/blog-3.jpg", // Placeholder
+    image: "/images/blog-nuts.png", // Placeholder
   },
   {
     id: 4,
@@ -46,7 +46,7 @@ const blogs = [
     category: "History",
     date: "Aug 30, 2024",
     author: "History Buff",
-    image: "/images/blog-4.jpg", // Placeholder
+    image: "/images/blog-veg.png", // Placeholder
   },
   {
     id: 5,
@@ -56,7 +56,7 @@ const blogs = [
     category: "DIY",
     date: "Aug 10, 2024",
     author: "Fermentaa Team",
-    image: "/images/blog-5.jpg", // Placeholder
+    image: "/images/blog-salad.png", // Placeholder
   },
   {
     id: 6,
@@ -66,7 +66,7 @@ const blogs = [
     category: "Science",
     date: "Jul 22, 2024",
     author: "Neurosci Daily",
-    image: "/images/blog-6.jpg", // Placeholder
+    image: "/images/blog-veg.png", // Placeholder
   },
 ];
 
@@ -92,13 +92,13 @@ export default function Blogs() {
         {/* Blog Grid */}
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {blogs.map((blog) => (
+            {BLOGS.map((blog) => (
               <article
                 key={blog.id}
                 className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100"
               >
                 {/* Image Container */}
-                <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
                   <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-secondary uppercase tracking-wider">
                     {blog.category}
                   </div>
@@ -106,14 +106,12 @@ export default function Blogs() {
                   <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 group-hover:scale-105 transition-transform duration-700">
                     <span className="text-sm">Image Placeholder</span>
                   </div>
-                  {/* 
-                  <Image 
-                    src={blog.image} 
+                  <Image
+                    src={blog.image}
                     alt={blog.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-700"
                   />
-                  */}
                 </div>
 
                 {/* Content */}

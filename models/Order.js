@@ -6,12 +6,31 @@ const OrderItemSchema = new mongoose.Schema({
           ref: 'Product',
           required: true,
      },
+     variant: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Variant',
+     },
+     // Product snapshot at time of order
+     productSnapshot: {
+          name: String,
+          image: String,
+          sku: String,
+          variantName: String, // Added variant name snapshot
+     },
      quantity: {
           type: Number,
           required: true,
           min: 1,
      },
      price: Number, // Snapshot of price at time of order
+     // Track which batches fulfilled this item
+     batches: [{
+          batch: {
+               type: mongoose.Schema.Types.ObjectId,
+               ref: 'Batch'
+          },
+          quantity: Number
+     }],
 });
 
 const OrderSchema = new mongoose.Schema({
@@ -38,17 +57,39 @@ const OrderSchema = new mongoose.Schema({
      },
      paymentStatus: {
           type: String,
-          enum: ['Pending', 'Paid', 'Failed'],
+          enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
           default: 'Pending',
+     },
+     paymentDetails: {
+          method: {
+               type: String,
+               enum: ['Cash on Delivery', 'UPI', 'Card', 'Net Banking', 'Wallet'],
+          },
+          transactionId: String,
+          paidAt: Date,
+          refundedAt: Date,
+          refundAmount: Number,
      },
      vendor: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Vendor',
      },
+     trackingNumber: String,
+     notes: String,
      createdAt: {
           type: Date,
           default: Date.now,
+     },
+     updatedAt: {
+          type: Date,
+          default: Date.now,
      }
+});
+
+// Update the updatedAt timestamp on save
+OrderSchema.pre('save', function (next) {
+     this.updatedAt = Date.now();
+     next();
 });
 
 export default mongoose.models.Order || mongoose.model('Order', OrderSchema);

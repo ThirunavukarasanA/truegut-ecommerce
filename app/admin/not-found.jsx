@@ -1,42 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { HiOutlineExclamationCircle } from "react-icons/hi";
+import { MdErrorOutline, MdArrowBack, MdDashboard } from "react-icons/md";
 
 export default function AdminNotFound() {
      return (
-          <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-               <div className="bg-white p-12 rounded-2xl shadow-xl shadow-gray-200/50 text-center max-w-md w-full border border-gray-100">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-purple-50 rounded-full mb-6">
-                         <HiOutlineExclamationCircle className="w-10 h-10 text-purple-600" />
-                    </div>
-
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">404</h1>
-                    <p className="text-xl font-semibold text-gray-700 mb-4">Page Not Found</p>
-                    <p className="text-gray-500 mb-8 leading-relaxed">
-                         The administrative page you are looking for doesn't exist or has been moved.
-                         Please check the URL or return to the dashboard.
-                    </p>
-
-                    <div className="space-y-3">
-                         <Link
-                              href="/admin/dashboard"
-                              className="block w-full py-3 px-6 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-all shadow-lg shadow-purple-200"
-                         >
-                              Back to Dashboard
-                         </Link>
-                         <Link
-                              href="/admin"
-                              className="block text-sm text-gray-400 hover:text-purple-600 transition-colors"
-                         >
-                              Go to Login
-                         </Link>
-                    </div>
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6 font-sans relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-3xl"></div>
+                    <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-bg-color blur-3xl"></div>
+                    <div className="absolute -bottom-[10%] left-[20%] w-[35%] h-[35%] rounded-full bg-secondary/10 blur-3xl"></div>
                </div>
 
-               <p className="mt-8 text-sm text-gray-400 font-medium">
-                    &copy; {new Date().getFullYear()} TrueGut Admin. All rights reserved.
-               </p>
+               <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/50 border border-gray-100 p-12 text-center animate-in fade-in zoom-in duration-700 relative z-10">
+                    <div className="w-24 h-24 bg-bg-color rounded-[2rem] flex items-center justify-center text-primary mx-auto mb-8 shadow-sm border border-gray-100 rotate-12">
+                         <MdErrorOutline size={48} />
+                    </div>
+
+                    <h1 className="text-6xl font-black text-gray-900 tracking-tighter mb-4">404</h1>
+                    <h2 className="text-3xl font-bold text-gray-900 mt-6">Page Not Found</h2>
+                    <p className="text-gray-500 mt-2 font-light">The page you are looking for does not exist or has been moved.</p>
+
+                    <Link
+                         href="/admin/dashboard"
+                         className="mt-8 px-8 py-4 bg-primary text-white rounded-2xl font-bold shadow-xl shadow-gray-200 hover:bg-secondary active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    >
+                         <MdDashboard size={20} />
+                         Back to Dashboard
+                    </Link>
+
+                    <button
+                         onClick={() => window.history.back()}
+                         className="mt-4 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-primary transition-colors flex items-center justify-center gap-2 w-full"
+                    >
+                         <MdArrowBack /> Go Back
+                    </button>
+               </div>
           </div>
      );
 }

@@ -3,32 +3,33 @@ import mongoose from 'mongoose';
 const CategorySchema = new mongoose.Schema({
      name: {
           type: String,
-          required: true,
+          required: [true, 'Please provide a category name'],
           unique: true,
           trim: true,
+          maxlength: [50, 'Name cannot be more than 50 characters']
      },
      slug: {
           type: String,
           unique: true,
           lowercase: true,
+          index: true
      },
-     description: String,
-     image: String, // URL
+     description: {
+          type: String,
+          trim: true,
+          maxlength: [500, 'Description cannot be more than 500 characters']
+     },
+     image: {
+          type: String, // Keeping as URL string for simplicity in categories
+     },
      isActive: {
           type: Boolean,
           default: true,
-     },
-     createdAt: {
-          type: Date,
-          default: Date.now,
+          index: true
      }
-});
-
-// Middleware to auto-generate slug from name
-CategorySchema.pre('save', async function () {
-     if (this.isModified('name')) {
-          this.slug = this.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
-     }
-});
+},
+     {
+          timestamps: true
+     });
 
 export default mongoose.models.Category || mongoose.model('Category', CategorySchema);

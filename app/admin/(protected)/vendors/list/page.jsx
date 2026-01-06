@@ -97,7 +97,7 @@ export default function VendorsListPage() {
                {/* Quick Stats */}
                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6">
-                         <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 shadow-inner">
+                         <div className="w-16 h-16 bg-bg-color rounded-2xl flex items-center justify-center text-primary shadow-inner">
                               <MdStore size={28} />
                          </div>
                          <div>
@@ -106,7 +106,7 @@ export default function VendorsListPage() {
                          </div>
                     </div>
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6">
-                         <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
+                         <div className="w-16 h-16 bg-bg-color rounded-2xl flex items-center justify-center text-secondary shadow-inner">
                               <MdMap size={28} />
                          </div>
                          <div>
@@ -145,11 +145,11 @@ export default function VendorsListPage() {
                          <tr key={vendor._id} className="hover:bg-gray-50/50 transition-colors group">
                               <td className="px-8 py-5">
                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-100 flex items-center justify-center text-purple-600 font-bold text-lg flex-shrink-0">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-bg-color to-gray-50 border border-gray-100 flex items-center justify-center text-primary font-bold text-lg flex-shrink-0">
                                              {vendor.name ? vendor.name.charAt(0) : 'V'}
                                         </div>
                                         <div>
-                                             <p className="font-medium text-gray-900 group-hover:text-purple-600 transition-colors">{vendor.name || "Unnamed Partner"}</p>
+                                             <p className="font-medium text-gray-900 group-hover:text-primary transition-colors">{vendor.name || "Unnamed Partner"}</p>
                                              <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mt-0.5">ID: {vendor._id ? vendor._id.slice(-6).toUpperCase() : "NEW"}</p>
                                         </div>
                                    </div>
@@ -160,12 +160,12 @@ export default function VendorsListPage() {
                                              <MdPhone size={14} className="text-gray-300" /> {vendor.phone}
                                         </p>
                                         <p className="text-xs text-gray-600 flex items-center gap-2">
-                                             <MdEmail size={14} className="text-gray-300" /> {vendor.email}
+                                             <a href={`mailto:${vendor.email}`} className="text-primary hover:underline">{vendor.email}</a>
                                         </p>
                                    </div>
                               </td>
                               <td className="px-8 py-5">
-                                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-medium uppercase tracking-wide border border-blue-100/50">
+                                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-bg-color text-primary rounded-lg text-[10px] font-medium uppercase tracking-wide border border-primary/10">
                                         <MdMap size={14} /> {vendor.serviceablePincodes?.length || 0} Points
                                    </span>
                               </td>
@@ -182,7 +182,7 @@ export default function VendorsListPage() {
                                    <div className="flex items-center justify-end gap-2 pr-2">
                                         <button
                                              onClick={() => handleEdit(vendor)}
-                                             className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all border border-transparent hover:border-purple-100/50"
+                                             className="p-2.5 text-gray-400 hover:text-primary hover:bg-bg-color active:bg-primary/10 rounded-xl transition-all border border-transparent hover:border-gray-100"
                                              title="Edit Profile"
                                         >
                                              <MdEdit size={18} />

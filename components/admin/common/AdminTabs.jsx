@@ -8,7 +8,7 @@ export default function AdminTabs({ tabs, activeTab, onChange }) {
                          key={tab}
                          onClick={() => onChange(tab)}
                          className={`px-6 py-2.5 rounded-xl text-[10px] font-light transition-all whitespace-nowrap uppercase tracking-widest ${activeTab === tab
-                              ? "bg-purple-600 text-white shadow-md shadow-purple-100"
+                              ? "bg-primary text-white shadow-md shadow-gray-200"
                               : "text-gray-400 hover:text-gray-700 hover:bg-gray-50"
                               }`}
                     >

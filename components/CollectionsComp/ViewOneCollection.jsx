@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-// import { useParams } from "next/navigation";
-import { PRODUCTS } from "@/data/products";
+// Imports cleaned up
 import Navbar from "@/components/Home/Navbar";
 import MobileBottomNav from "@/components/Home/MobileBottomNav";
 import Footer from "@/components/Home/Footer";
@@ -14,6 +13,10 @@ import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { useAuth } from "@/context/AuthContext";
+import RestockModal from "@/components/Product/RestockModal";
+import { toast } from "react-hot-toast"; // Changed to react-hot-toast as sonner is not in package.json
+import { MdNotificationsActive } from "react-icons/md";
 
 export default function ViewOneCollection() {
   const { slug } = useParams();
@@ -23,15 +26,79 @@ export default function ViewOneCollection() {
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState("description");
 
+  /* State */
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const { user } = useAuth();
+  const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
+  const [notifyLoading, setNotifyLoading] = useState(false);
+
+  const handleNotifyRequest = async () => {
+    if (!selectedVariant) return;
+
+    // Case 1: Logged In -> Auto Submit
+    if (user) {
+      setNotifyLoading(true);
+      try {
+        const res = await fetch("/api/restock-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productId: product._id,
+            variantId: selectedVariant._id,
+            customerId: user.id || user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone || null
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success(data.message);
+        } else {
+          toast.error(data.error);
+        }
+      } catch (error) {
+        toast.error("Failed to submit request");
+      } finally {
+        setNotifyLoading(false);
+      }
+    } else {
+      // Case 2: Guest -> Open Modal
+      setIsRestockModalOpen(true);
+    }
+  };
+
   useEffect(() => {
-    if (slug) {
-      console.log("slug :", slug);
-      const foundProduct = PRODUCTS.find((p) => p.slug === slug);
-      if (foundProduct) {
-        setProduct(foundProduct);
-        setActiveImage(foundProduct.images?.[0] || foundProduct.image);
+    async function fetchProduct() {
+      if (!slug) return;
+      try {
+        const res = await fetch(`/api/products/${slug}`);
+        const data = await res.json();
+
+        if (data.success) {
+          const p = data.product;
+          // Normalize Images
+          const images = p.images?.map((img) => (typeof img === "string" ? img : img.url)) || [];
+          if (p.image) images.unshift(p.image);
+
+          setProduct({
+            ...p,
+            images: images.length > 0 ? images : ["/images/placeholder.png"],
+          });
+
+          if (images.length > 0) setActiveImage(images[0]);
+
+          // Set default variant
+          if (p.variants && p.variants.length > 0) {
+            const defaultVar = p.variants.find((v) => v.stock > 0) || p.variants[0];
+            setSelectedVariant(defaultVar);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
       }
     }
+    fetchProduct();
   }, [slug]);
 
   const [swiper, setSwiper] = useState(null);
@@ -66,7 +133,7 @@ export default function ViewOneCollection() {
     <div className="bg-white min-h-screen flex flex-col font-sans">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-16 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-30 w-full">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-400 mb-8">
           <Link href="/" className="hover:text-primary transition-colors">
@@ -120,9 +187,6 @@ export default function ViewOneCollection() {
                       </div>
                     </SwiperSlide>
                   ))}
-                  {/* Custom Navigation Buttons */}
-                  {/* <div className="swiper-button-prev !text-gray-800 !w-10 !h-10 !bg-white/80 !backdrop-blur-sm !rounded-full !shadow-md after:!text-lg opacity-0 group-hover:opacity-100 transition-opacity"></div> */}
-                  {/* <div className="swiper-button-next !text-gray-800 !w-10 !h-10 !bg-white/80 !backdrop-blur-sm !rounded-full !shadow-md after:!text-lg opacity-0 group-hover:opacity-100 transition-opacity"></div> */}
                 </Swiper>
               ) : (
                 <Image
@@ -130,6 +194,7 @@ export default function ViewOneCollection() {
                   alt={product.name}
                   fill
                   className="object-contain p-6"
+                  priority
                 />
               )}
             </div>
@@ -140,11 +205,10 @@ export default function ViewOneCollection() {
                   <button
                     key={idx}
                     onClick={() => setActiveImage(img)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 transition-all ${
-                      activeImage === img
-                        ? "border-primary"
-                        : "border-transparent hover:border-gray-200"
-                    }`}
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 transition-all ${activeImage === img
+                      ? "border-primary"
+                      : "border-transparent hover:border-gray-200"
+                      }`}
                   >
                     <Image
                       src={img}
@@ -166,44 +230,49 @@ export default function ViewOneCollection() {
 
             <div className="flex items-center gap-2 mb-6 text-sm">
               <span className="font-bold text-gray-700">Availability :</span>
-              <span className="text-green-500 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                {product.inStock ? "In Stock" : "Out of Stock"}
+              <span className={`flex items-center gap-1 ${selectedVariant?.stock > 0 ? "text-green-500" : "text-red-500"}`}>
+                <span className={`w-2 h-2 rounded-full ${selectedVariant?.stock > 0 ? "bg-green-500 animate-pulse" : "bg-red-500"}`}></span>
+                {selectedVariant?.stock > 0 ? `In Stock (${selectedVariant.stock})` : "Out of Stock"}
               </span>
             </div>
 
             <div className="flex items-end gap-3 mb-6">
               <span className="text-3xl font-bold text-font-title">
-                ₹ {product.price.toFixed(2)}
+                ₹ {selectedVariant ? selectedVariant.price.toFixed(2) : "N/A"}
               </span>
-              {product.oldPrice && (
-                <span className="text-lg text-gray-400 line-through mb-1">
-                  ₹ {product.oldPrice.toFixed(2)}
-                </span>
-              )}
+              {/* Old price logic could be added if variants have msrp/oldPrice */}
             </div>
 
             <p className="text-gray-600 leading-relaxed mb-8">
               {product.detailedDescription || product.description}
             </p>
 
-            {/* Size Selector (Static for now based on image) */}
-            <div className="mb-8">
-              <p className="font-bold text-gray-800 mb-2">
-                Size : <span className="font-normal text-gray-500">1kg</span>
-              </p>
-              <div className="flex gap-3">
-                <button className="px-4 py-2 border rounded-lg text-sm font-medium hover:border-primary hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  1KG
-                </button>
-                <button className="px-4 py-2 border rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed">
-                  2KG
-                </button>
-                <button className="px-4 py-2 border rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed">
-                  5KG
-                </button>
+            {/* Dynamic Variant Selector */}
+            {product.variants && product.variants.length > 0 && (
+              <div className="mb-8">
+                <p className="font-bold text-gray-800 mb-2">
+                  Size / Variant : <span className="font-normal text-gray-500">{selectedVariant?.name}</span>
+                </p>
+                <div className="flex gap-3 flex-wrap">
+                  {product.variants.map((variant) => (
+                    <button
+                      key={variant._id}
+                      onClick={() => setSelectedVariant(variant)}
+                      disabled={!variant.isActive} // or stock === 0 if you want to disable out of stock
+                      className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors
+                            ${selectedVariant?._id === variant._id
+                          ? "border-primary text-primary bg-primary/5"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }
+                            ${(!variant.isActive) ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
+                        `}
+                    >
+                      {variant.name}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quantity & Actions */}
             <div className="flex flex-col sm:flex-row gap-6 mb-8">
@@ -229,19 +298,44 @@ export default function ViewOneCollection() {
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <button
-                onClick={() => {
-                  for (let i = 0; i < quantity; i++) addToCart(product);
-                }}
-                className="flex-1 bg-[#4a8b3c] text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-[#3d7a30] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2"
-              >
-                Add to Cart
-              </button>
-              <button className="flex-1 bg-[#e05d25] text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-[#c94e1b] transition-transform active:scale-95 shadow-md">
-                Buy it Now
-              </button>
-            </div>
+            {/* Actions: Add to Cart OR Notify Me */}
+            {selectedVariant?.stock > 0 ? (
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    if (!selectedVariant) return;
+                    addToCart({
+                      ...product,
+                      id: product._id,
+                      variantId: selectedVariant._id,
+                      variantName: selectedVariant.name,
+                      price: selectedVariant.price,
+                      quantity: quantity,
+                    });
+                  }}
+                  className="flex-1 bg-[#4a8b3c] text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-[#3d7a30] transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2"
+                >
+                  Add to Cart
+                </button>
+                <button className="flex-1 bg-[#e05d25] text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-[#c94e1b] transition-transform active:scale-95 shadow-md">
+                  Buy it Now
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleNotifyRequest}
+                  disabled={notifyLoading}
+                  className="w-full bg-amber-500 text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-amber-600 transition-colors shadow-md flex items-center justify-center gap-2"
+                >
+                  <MdNotificationsActive size={20} />
+                  {notifyLoading ? "Processing..." : "Notify Me When Available"}
+                </button>
+                <p className="text-center text-sm text-gray-500">
+                  We'll email you when this size is back in stock.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -255,11 +349,10 @@ export default function ViewOneCollection() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`pb-4 text-lg font-bold uppercase tracking-wide transition-colors relative ${
-                    activeTab === tab.toLowerCase()
-                      ? "text-gray-800"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  className={`pb-4 text-lg font-bold uppercase tracking-wide transition-colors relative ${activeTab === tab.toLowerCase()
+                    ? "text-gray-800"
+                    : "text-gray-400 hover:text-gray-600"
+                    }`}
                 >
                   {tab}
                   {activeTab === tab.toLowerCase() && (
@@ -300,13 +393,11 @@ export default function ViewOneCollection() {
                 <h4 className="text-lg font-bold text-gray-800 mb-6">
                   Nutrition Information
                 </h4>
-                <ul className="list-disc list-outside pl-5 space-y-3 text-gray-600 leading-relaxed marker:text-gray-400">
-                  {product.nutrition && product.nutrition.length > 0 ? (
-                    product.nutrition.map((item, i) => <li key={i}>{item}</li>)
-                  ) : (
-                    <li>No specific nutrition info available.</li>
-                  )}
-                </ul>
+                <p className="text-gray-600 leading-relaxed">
+                  {product.nutrition ||
+                    "Our products are crafted with care, respecting traditional fermentation methods that have been passed down through generations. We believe in the power of time and natural ingredients to create foods that strictly adhere to organic standards, ensuring you get the best nature has to offer."}
+                </p>
+
               </div>
             )}
 
@@ -327,6 +418,17 @@ export default function ViewOneCollection() {
 
       <Footer />
       <MobileBottomNav />
+
+      {/* Restock Modal for Guests */}
+      {selectedVariant && (
+        <RestockModal
+          isOpen={isRestockModalOpen}
+          onClose={() => setIsRestockModalOpen(false)}
+          product={product}
+          variant={selectedVariant}
+          onSubmitSuccess={() => setIsRestockModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

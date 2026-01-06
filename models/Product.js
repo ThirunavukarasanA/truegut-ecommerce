@@ -1,109 +1,111 @@
+
 import mongoose from 'mongoose';
 
-const ProductSchema = new mongoose.Schema({
-     name: {
-          type: String,
-          required: true,
-          trim: true,
-     },
-     slug: {
-          type: String,
-          unique: true,
-          lowercase: true,
-     },
-     description: String,
-     category: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Category',
-          required: true,
-     },
-     price: {
-          type: Number,
-          required: true,
-          min: 0,
-     },
-     stock: {
-          type: Number,
-          default: 0,
-          min: 0,
-     },
-     openingStock: {
-          type: Number,
-          default: 0,
-          min: 0,
-     },
-     images: [String], // Array of image URLs
-     status: {
-          type: String,
-          enum: ['Active', 'Draft', 'Out of Stock'],
-          default: 'Draft',
-     },
-     variants: [{
-          name: String, // e.g., "Size", "Flavor"
-          options: [String] // e.g., ["500ml", "1L"]
-     }],
-     fermentationType: {
-          type: String,
-          description: "e.g., Wild, Controlled, Symbiotic"
-     },
-     fermentationDuration: {
-          type: String,
-          description: "e.g., 7-14 days"
-     },
-     shelfLife: {
-          type: Number,
-          description: "Duration in days"
-     },
-     productCode: {
-          type: String,
-          unique: true,
-     },
-     createdAt: {
-          type: Date,
-          default: Date.now,
-     }
-});
+const ProductSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Product name is required'],
+      trim: true,
+      maxlength: [100, 'Name cannot range more than 100 characters']
+    },
 
-// Middleware to auto-generate slug and productCode
-ProductSchema.pre('save', async function (next) {
-     if (this.isModified('name')) {
-          this.slug = this.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
-     }
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      index: true
+    },
 
-     if (!this.productCode && this.category) {
-          try {
-               // Load Category Model dynamically to avoid circular dependency issues if any
-               const Category = mongoose.models.Category || mongoose.model('Category');
-               const categoryDoc = await Category.findById(this.category);
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: [true, 'Please select a category']
+    },
 
-               if (categoryDoc) {
-                    const catPrefix = categoryDoc.name.substring(0, 3).toUpperCase();
-                    const namePrefix = this.name.substring(0, 3).toUpperCase();
-                    const prefix = `${catPrefix}-${namePrefix}`;
+    description: {
+      type: String,
+      required: [true, 'Please provide a description'],
+      maxlength: [2000, 'Description cannot exceed 2000 characters']
+    },
 
-                    // Find last product with this prefix
-                    // We need to access the Product model itself. `this.constructor` gives us the model.
-                    const lastProduct = await this.constructor.findOne({
-                         productCode: new RegExp(`^${prefix}-\\d{3}$`)
-                    }).sort({ productCode: -1 });
+    history: {
+      type: String,   // textarea (story / origin / brand narrative)
+      maxlength: [2000, 'History cannot exceed 2000 characters']
+    },
 
-                    let sequence = 1;
-                    if (lastProduct && lastProduct.productCode) {
-                         const parts = lastProduct.productCode.split('-');
-                         const lastSeq = parseInt(parts[parts.length - 1]);
-                         if (!isNaN(lastSeq)) sequence = lastSeq + 1;
-                    }
+    fermentation: {
+      type: {
+        type: String,
+        enum: {
+          values: ["lactic", "acetic", "alcoholic", "fungal", "wild", "symbiotic"],
+          message: '{VALUE} is not a supported fermentation type'
+        }
+      },
+      durationDays: {
+        type: Number,
+        min: [0, 'Duration cannot be negative']
+      },
+      liveCulture: {
+        type: Boolean,
+        default: true
+      },
+      alcoholPercentage: {
+        type: Number,
+        min: [0, 'Alcohol percentage cannot be negative'],
+        max: [100, 'Alcohol percentage cannot exceed 100']
+      }
+    },
 
-                    this.productCode = `${prefix}-${String(sequence).padStart(3, '0')}`;
-               }
-          } catch (error) {
-               console.error("Error auto-generating productCode:", error);
-               // Proceed without code or handle error? Mongoose will error on unique constraint if null, 
-               // but schema doesn't say required. However, we want it.
-               // For now, let's allow it to pass, or fallback.
-          }
-     }
-     next();
-});
+    shelfLifeDays: {
+      type: Number,
+      min: [0, 'Shelf life cannot be negative']
+    },
+
+    requiresColdShipping: {
+      type: Boolean,
+      default: false
+    },
+
+    nutrition: {
+      type: String   // textarea (ingredients, nutrition facts)
+    },
+
+    regulatory: {
+      warnings: String,
+    },
+
+    isSubscriptionAvailable: {
+      type: Boolean,
+      default: false
+    },
+
+    status: {
+      type: String,
+      enum: {
+        values: ["draft", "active", "archived"],
+        message: '{VALUE} is not a valid status'
+      },
+      default: "draft",
+      index: true
+    },
+
+    images: [
+      {
+        url: String,
+        alt: String
+      }
+    ],
+
+    productCode: { // Keeping for internal reference if needed, though user didn't explicitly ask to remove it, it might be useful.
+      type: String,
+      unique: true
+    }
+  },
+  {
+    timestamps: true
+  });
 
 export default mongoose.models.Product || mongoose.model('Product', ProductSchema);
+

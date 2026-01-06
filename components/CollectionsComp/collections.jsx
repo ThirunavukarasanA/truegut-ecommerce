@@ -4,15 +4,48 @@ import ProductCard from "@/components/Common/ProductCard";
 import Navbar from "@/components/Home/Navbar";
 import MobileBottomNav from "@/components/Home/MobileBottomNav";
 import Footer from "@/components/Home/Footer";
-import { PRODUCTS } from "@/data/products";
+// Hardcoded PRODUCTS removed
+
 import { FiSearch } from "react-icons/fi";
 
 export default function collections() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredProducts = PRODUCTS.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  React.useEffect(() => {
+    // Debounce search
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  async function fetchProducts() {
+    setLoading(true);
+    try {
+      const url = new URL("/api/products", window.location.origin);
+      if (searchQuery) url.searchParams.set("search", searchQuery);
+
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.products.map(p => ({
+          ...p,
+          id: p._id,
+          image: p.images?.[0]?.url || "/images/placeholder.png",
+          price: p.minPrice || 0
+        })));
+      } else {
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch products", error);
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
       <Navbar />
@@ -45,9 +78,13 @@ export default function collections() {
         </div>
 
         {/* Product Grid */}
-        {filteredProducts.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
+            {products.map((product) => (
               <div key={product.id} className="h-full">
                 <ProductCard product={product} />
               </div>

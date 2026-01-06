@@ -1,9 +1,16 @@
 import ViewOneCollection from "@/components/CollectionsComp/ViewOneCollection";
-import { PRODUCTS } from "@/data/products";
+import dbConnect from "@/lib/db";
+import Product from "@/models/Product";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const product = PRODUCTS.find((p) => p.slug === slug);
+
+  await dbConnect();
+  // Lookup by slug or productCode to match API logic
+  const product = await Product.findOne({
+    $or: [{ slug: slug }, { productCode: slug }],
+    status: 'active'
+  }).select('name description images slug');
 
   if (!product) {
     return {
@@ -11,6 +18,9 @@ export async function generateMetadata({ params }) {
       description: "The requested product could not be found.",
     };
   }
+
+  // Handle images which might be objects or strings
+  const imageUrls = product.images?.map(img => typeof img === 'string' ? img : img.url) || [];
 
   return {
     title: `${product.name} | TrueGut`,
@@ -23,13 +33,19 @@ export async function generateMetadata({ params }) {
       description:
         product.description ||
         "Explore our range of organic and fermented products",
-      url: `https://yourwebsite.com/collections/${slug}`, // Update with actual domain if known, or relative
+      url: `https://truegut.in/collections/${slug}`,
       type: "website",
-      images: product.images ? product.images.map((url) => ({ url })) : [],
+      images: imageUrls.map((url) => ({ url })),
     },
   };
 }
 
+import { Suspense } from "react";
+
 export default function ProductDetailPage() {
-  return <ViewOneCollection />;
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ViewOneCollection />
+    </Suspense>
+  );
 }

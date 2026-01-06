@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 
@@ -7,11 +8,27 @@ export async function POST(req) {
           const { email } = await req.json();
           await dbConnect();
 
-          // Check if user exists (Optional: Don't reveal existence for security, but for admin panel internal tool it helps)
-          const user = await User.findOne({ email });
+          const user = await User.findOne({ email: email.toLowerCase() });
 
           if (user) {
-               // In real app: Generate token, save to DB with expiry, send link to email
+               // Generate secure reset token
+               const resetToken = crypto.randomBytes(32).toString('hex');
+               const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+               // Set token and expiry (1 hour)
+               user.resetPasswordToken = resetTokenHash;
+               user.resetPasswordExpires = Date.now() + 3600000;
+
+               await user.save();
+
+               // In production: Send email here.
+               // For this dev environment, we'll return the token in the response for testing/demo
+               return NextResponse.json({
+                    success: true,
+                    message: 'Password reset link has been sent to your email.',
+                    // ONLY FOR DEV/DEMO PURPOSE:
+                    debugToken: resetToken
+               });
           }
 
           return NextResponse.json({

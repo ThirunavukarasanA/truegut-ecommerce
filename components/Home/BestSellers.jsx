@@ -1,79 +1,51 @@
 "use client";
 import React, { useRef } from "react";
-import SectionHeading from "@/components/Common/SectionHeading";
+// import SectionHeading from "@/components/Common/SectionHeading";
 import ProductCard from "@/components/Common/ProductCard";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { HiArrowLongRight } from "react-icons/hi2";
 
 // Import Swiper styles
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { BiArrowFromLeft, BiArrowToLeft } from "react-icons/bi";
+import { FaArrowRight } from "react-icons/fa";
+import { FaArrowRightLong } from "react-icons/fa6";
 
-const PRODUCTS = [
-  {
-    id: 1,
-    name: "Honey Dill | 100% organic",
-    description:
-      "Lorem Ipsum has been the industry's standard dummy text Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 130.0,
-    image: "/images/product-honey.png",
-  },
-  {
-    id: 2,
-    name: "Milk kombucha 100% organic",
-    description: "Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 120.0,
-    image: "/images/product-kombucha.png",
-  },
-  {
-    id: 3,
-    name: "Kimchi 100% organic",
-    description: "Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 120.0,
-    image: "/images/product-kimchi-1.png",
-  },
-  {
-    id: 4,
-    name: "Kimchi 100% organic",
-    description: "Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 120.0,
-    image: "/images/product-kimchi-2.png",
-  },
-  {
-    id: 5,
-    name: "Milk Kefir Grains",
-    description: "Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 120.0,
-    image: "/images/milk-kefir-grains.jpg",
-  },
-  {
-    id: 6,
-    name: "Kimchi 100% organic",
-    description: "Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 120.0,
-    image: "/images/product-kimchi-1.png",
-  },
-  {
-    id: 7,
-    name: "Kimchi 100% organic",
-    description: "Lorem Ipsum has been the industry's standard dummy text",
-    price: 59.0,
-    oldPrice: 120.0,
-    image: "/images/product-kimchi-2.png",
-  },
-];
+// Hardcoded PRODUCTS removed
 
 export default function BestSellers() {
+  const [products, setProducts] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
   const prevRef = useRef(null);
   const nextRef = useRef(null);
+
+  React.useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("/api/products?limit=8&sort=newest");
+        const data = await res.json();
+        if (data.success) {
+          // Normalize data for ProductCard if needed
+          const mappedProducts = data.products.map((p) => ({
+            ...p,
+            id: p._id, // Ensure ID mapping if Card expects id
+            image: p.images?.[0]?.url || "/images/placeholder.png",
+            price: p.minPrice || 0,
+          }));
+          setProducts(mappedProducts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch products", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
 
   return (
     <section className="py-20 group/slider relative">
@@ -84,7 +56,6 @@ export default function BestSellers() {
             Live Microbial Starters
           </h2>
         </div>
-
 
         <div className="max-w-7xl mx-auto relative px-8 md:px-12 mt-10">
           {/* Custom Navigation Arrows */}
@@ -112,7 +83,11 @@ export default function BestSellers() {
             pagination={{
               clickable: true,
               renderBullet: function (index, className) {
-                return '<span class="' + className + ' transition-all duration-300"></span>';
+                return (
+                  '<span class="' +
+                  className +
+                  ' transition-all duration-300"></span>'
+                );
               },
             }}
             onBeforeInit={(swiper) => {
@@ -132,7 +107,7 @@ export default function BestSellers() {
             }}
             className="pb-16!"
           >
-            {PRODUCTS.map((product) => (
+            {products.map((product) => (
               <SwiperSlide key={product.id}>
                 <ProductCard product={product} />
               </SwiperSlide>
@@ -154,6 +129,18 @@ export default function BestSellers() {
               border-radius: 9999px;
             }
           `}</style>
+          <div className="flex group justify-center items-center ">
+            <a
+              href="/collections"
+              className="underline justify-center flex underline-offset-4 decoration-2 w-full mt-4 text-primary hover:text-secondary font-bold"
+            >
+              View All Products
+              <HiArrowLongRight
+                size={20}
+                className="ml-2 group-hover:translate-x-2 transition-all duration-300"
+              />
+            </a>
+          </div>
         </div>
       </div>
     </section>

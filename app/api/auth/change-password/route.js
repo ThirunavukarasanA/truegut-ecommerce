@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import dbConnect from '@/lib/db';
 import User from '@/models/User';
 import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req) {
      try {
@@ -36,7 +37,8 @@ export async function POST(req) {
                return NextResponse.json({ error: 'Incorrect old password' }, { status: 400 });
           }
 
-          user.password = newPassword; // Will be hashed by pre-save
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(newPassword, salt);
           await user.save();
 
           return NextResponse.json({ success: true, message: 'Password updated successfully' });

@@ -2,9 +2,11 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
+import { adminFetch } from "@/lib/adminFetch";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import ProductForm from "@/components/admin/catalog/ProductForm";
 import toast from "react-hot-toast";
+import AdminConfirmModal from "@/components/admin/common/AdminConfirmModal";
 
 export default function EditProductPage({ params }) {
      const { id } = use(params);
@@ -13,44 +15,16 @@ export default function EditProductPage({ params }) {
      const [categories, setCategories] = useState([]);
      const [loading, setLoading] = useState(true);
 
-     useEffect(() => {
-          const fetchData = async () => {
-               try {
-                    // Fetch Categories
-                    const catRes = await fetch("/api/admin/catalog/categories");
-                    const catData = await catRes.json();
-                    if (catData.success) {
-                         setCategories(Array.isArray(catData.data) ? catData.data : []);
-                    }
+     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+     const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
-                    // Fetch Product (Using the search API or we might need a direct GET by ID if not available, usually reusing search logic fits or we assume the list has it, but better explicit fetch)
-                    // Currently our API route `app/api/admin/catalog/products/[id]/route.js` ONLY has PATCH and DELETE.
-                    // We need to implement GET in `[id]/route.js` OR use the main route with search? No, `[id]` is best. 
-                    // Wait, I see I should check if GET is available in [id] route.
-                    // I will check the file using `read_file` before writing if unsure, BUT 
-                    // `app/api/admin/catalog/products/route.js` has GET (list), `[id]/route.js` usually has GET too. 
-                    // Let me quickly assume I need to ADD GET to `[id]/route.js` OR just use what I have.
-                    // Actually, looking at previous context `app/api/admin/catalog/products/[id]/route.js` ONLY showed PATCH and DELETE in the `view_file` output in step 22.
-                    // So I MUST add GET to `[id]/route.js` as well to support this page.
-               } catch (e) {
-                    console.error(e);
-               }
-          };
-          fetchData();
-          // For now, I'll implement the component assuming I'll fix the API next.
-     }, []);
-
-     // Let's reimplement useEffect to purely handle the page logic, I'll fix the API separately.
      useEffect(() => {
           const init = async () => {
                try {
-                    const [catRes, prodRes] = await Promise.all([
-                         fetch("/api/admin/catalog/categories"),
-                         fetch(`/api/admin/catalog/products/${id}`)
+                    const [catData, prodData] = await Promise.all([
+                         adminFetch("/api/admin/catalog/categories"),
+                         adminFetch(`/api/admin/catalog/products/${id}`)
                     ]);
-
-                    const catData = await catRes.json();
-                    const prodData = await prodRes.json();
 
                     if (catData.success) setCategories(catData.data);
 
@@ -61,7 +35,9 @@ export default function EditProductPage({ params }) {
                          router.push("/admin/catalog/products");
                     }
                } catch (error) {
-                    toast.error("Failed to load data");
+                    if (error.message !== 'Unauthorized - Redirecting to login') {
+                         toast.error(error.message || "Failed to load data");
+                    }
                } finally {
                     setLoading(false);
                }
@@ -70,8 +46,34 @@ export default function EditProductPage({ params }) {
           if (id) init();
      }, [id, router]);
 
-     const handleSave = (updatedProduct) => {
-          router.push("/admin/catalog/products");
+     const handleSave = (formData) => {
+          setFormDataToSubmit(formData);
+          setIsConfirmOpen(true);
+     };
+
+     const confirmSubmit = async () => {
+          if (!formDataToSubmit) return;
+          const toastId = toast.loading("Updating product...");
+          try {
+               const res = await fetch(`/api/admin/catalog/products/${id}`, {
+                    method: "PATCH",
+                    body: formDataToSubmit,
+               });
+               const data = await res.json();
+
+               if (data.success) {
+                    toast.success("Product updated successfully", { id: toastId });
+                    setProduct(data.data);
+               } else {
+                    toast.error(data.error || "Failed to update product", { id: toastId });
+               }
+          } catch (error) {
+               console.error(error);
+               toast.error("An error occurred", { id: toastId });
+          } finally {
+               setIsConfirmOpen(false);
+               setFormDataToSubmit(null);
+          }
      };
 
      const handleCancel = () => {
@@ -82,7 +84,7 @@ export default function EditProductPage({ params }) {
      if (!product) return null;
 
      return (
-          <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="space-y-6 animate-in fade-in duration-500 flex flex-col h-[calc(100vh-8rem)]">
                <AdminPageHeader
                     title="Update Product"
                     description={`Refine specifications for ${product.name}`}
@@ -95,6 +97,15 @@ export default function EditProductPage({ params }) {
                     categories={categories}
                     onSave={handleSave}
                     onCancel={handleCancel}
+               />
+
+               <AdminConfirmModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={confirmSubmit}
+                    title="Confirm Update"
+                    message="Are you sure you want to update the product details?"
+                    action="update"
                />
           </div>
      );

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Category from '@/models/Category';
 import { getAuthenticatedUser } from '@/lib/api-auth';
+import { generateSlug } from '@/lib/model-helpers';
 
 export async function PATCH(req, { params }) {
      const user = await getAuthenticatedUser();
@@ -18,6 +19,7 @@ export async function PATCH(req, { params }) {
 
           if (body.name) {
                body.name = body.name.trim();
+               body.slug = generateSlug(body.name);
                // Check for duplicate name excluding current category
                const exists = await Category.findOne({
                     name: { $regex: new RegExp(`^${body.name}$`, 'i') },

@@ -20,20 +20,10 @@ const UserSchema = new mongoose.Schema({
           type: Date,
           default: Date.now,
      },
+     resetPasswordToken: String,
+     resetPasswordExpires: Date,
 });
 
-// Pre-save hook to hash password
-UserSchema.pre('save', async function () {
-     if (!this.isModified('password')) {
-          return;
-     }
-     try {
-          const salt = await bcrypt.genSalt(10);
-          this.password = await bcrypt.hash(this.password, salt);
-     } catch (error) {
-          throw new Error(error);
-     }
-});
 
 // Method to compare password
 UserSchema.methods.comparePassword = async function (candidatePassword) {

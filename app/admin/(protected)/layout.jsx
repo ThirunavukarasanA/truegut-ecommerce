@@ -3,13 +3,14 @@
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
 import { AdminSidebarProvider, useAdminSidebar } from "@/context/AdminSidebarContext";
+import { SettingsProvider } from "@/context/SettingsContext";
 import "@/app/globals.css";
 
 function AdminLayoutContent({ children }) {
      const { isSidebarOpen } = useAdminSidebar();
 
      return (
-          <div className="min-h-screen bg-white">
+          <div className="min-h-screen bg-bg-color">
                <AdminSidebar />
 
                {/* Main Content Area */}
@@ -25,8 +26,10 @@ function AdminLayoutContent({ children }) {
 
 export default function AdminLayout({ children }) {
      return (
-          <AdminSidebarProvider>
-               <AdminLayoutContent>{children}</AdminLayoutContent>
-          </AdminSidebarProvider>
+          <SettingsProvider>
+               <AdminSidebarProvider>
+                    <AdminLayoutContent>{children}</AdminLayoutContent>
+               </AdminSidebarProvider>
+          </SettingsProvider>
      );
 }

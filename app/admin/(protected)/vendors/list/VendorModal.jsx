@@ -156,7 +156,7 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                               form="vendor-form"
                               type="submit"
                               disabled={submitting}
-                              className="flex-1 px-8 py-5 bg-purple-600 text-white font-black rounded-[1.25rem] hover:bg-purple-700 transition-all shadow-xl shadow-purple-200 disabled:opacity-50 uppercase text-[11px] tracking-[0.2em]"
+                              className="flex-1 px-8 py-5 bg-primary text-white font-black rounded-[1.25rem] hover:bg-secondary transition-all shadow-xl shadow-gray-200 disabled:opacity-50 uppercase text-[11px] tracking-[0.2em]"
                          >
                               {submitting ? "Processing..." : (initialData ? "Update Partner" : "Authorize Partner")}
                          </button>

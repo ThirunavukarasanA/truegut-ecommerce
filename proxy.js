@@ -4,7 +4,13 @@ import { jwtVerify } from 'jose';
 export async function proxy(req) {
      const { pathname } = req.nextUrl;
 
-     // 1. Redirect to dashboard if trying to access public login page while logged in
+     // Public routes that don't require authentication
+     const publicRoutes = ['/admin', '/admin/forgot-password', '/admin/reset-password'];
+
+     // Check if the current path is a public route
+     const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+
+     // 1. Redirect to dashboard if trying to access login page while logged in
      if (pathname === '/admin') {
           const token = req.cookies.get('admin_token')?.value;
           if (token) {
@@ -14,17 +20,19 @@ export async function proxy(req) {
                     // Valid token? Redirect to dashboard
                     return NextResponse.redirect(new URL('/admin/dashboard', req.url));
                } catch (e) {
-                    // Invalid token? Stay on login page (no action needed)
+                    // Invalid token? Stay on login page
                }
           }
           // No token? Allowed to stay on login page
           return NextResponse.next();
      }
 
-     // 2. Protect all other /admin/* routes
-     // The matcher ensures this only runs on /admin/* paths.
-     // Since we handled /admin above, everything else here requires auth.
+     // 2. Allow public routes without authentication
+     if (isPublicRoute) {
+          return NextResponse.next();
+     }
 
+     // 3. Protect all other /admin/* routes
      const token = req.cookies.get('admin_token')?.value;
 
      if (!token) {

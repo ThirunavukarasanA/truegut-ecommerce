@@ -3,9 +3,11 @@ import React, { useRef } from "react";
 import SectionHeading from "@/components/Common/SectionHeading";
 import Image from "next/image";
 import Link from "next/link";
+import { FaCalendarAlt, FaUser } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { HiArrowLongRight } from "react-icons/hi2";
 
 // Import Swiper styles
 import "swiper/css";
@@ -15,35 +17,63 @@ import "swiper/css/pagination";
 const BLOGS = [
   {
     id: 1,
-    title: "Green onion knife and salad placed",
-    description:
-      "Lorem Ipsum is simply dummy text of the printing industry. Lorem Ipsum daler...",
-    date: "AUG-2023",
-    image: "/images/blog-salad.png",
+    title: "The Magic of Fermentation: Why Your Gut Loves It",
+    excerpt:
+      "Discover the ancient secret to better digestion and a stronger immune system trough natural probiotics.",
+    category: "Health & Wellness",
+    date: "Oct 12, 2024",
+    author: "Dr. Sarah Roots",
+    image: "/images/blog-salad.png", // Placeholder
   },
   {
     id: 2,
-    title: "Fresh organic brand and picnic",
-    description:
-      "Lorem Ipsum is simply dummy text of the printing industry. Lorem Ipsum daler...",
-    date: "SEP-2023",
-    image: "/images/blog-veg.png",
+    title: "Kimchi vs. Sauerkraut: What's the Difference?",
+    excerpt:
+      "A deep dive into the two most popular fermented cabbage dishes and which one might be right for your palate.",
+    category: "Food Culture",
+    date: "Sep 28, 2024",
+    author: "Chef Mike Ferment",
+    image: "/images/blog-veg.png", // Placeholder
   },
   {
     id: 3,
-    title: "Health and skin for your organic",
-    description:
-      "Lorem Ipsum is simply dummy text of the printing industry. Lorem Ipsum daler...",
-    date: "OCT-2023",
-    image: "/images/blog-nuts.png",
+    title: "5 Simple Ways to Incorporate Probiotics Daily",
+    excerpt:
+      "You don't need supplements. Here are easy (and delicious) ways to boost your gut health with real food.",
+    category: "Lifestyle",
+    date: "Sep 15, 2024",
+    author: "Lisa Green",
+    image: "/images/blog-nuts.png", // Placeholder
   },
   {
     id: 4,
-    title: "Fresh organic brand and picnic",
-    description:
-      "Lorem Ipsum is simply dummy text of the printing industry. Lorem Ipsum daler...",
-    date: "SEP-2023",
-    image: "/images/blog-veg.png",
+    title: "The History of Kombucha",
+    excerpt:
+      "Tracing the roots of the 'Tea of Immortality' from ancient China to your local grocery store shelf.",
+    category: "History",
+    date: "Aug 30, 2024",
+    author: "History Buff",
+    image: "/images/blog-veg.png", // Placeholder
+  },
+  {
+    id: 5,
+    title: "DIY Fermentation: Beginner's Guide",
+    excerpt:
+      "Ready to start your own bubbling jar of goodness? Here are the essential tools and tips you need.",
+    category: "DIY",
+    date: "Aug 10, 2024",
+    author: "Fermentaa Team",
+    image: "/images/blog-salad.png", // Placeholder
+  },
+  {
+    id: 6,
+    title: "Beyond the Gut: Fermented Foods and Mental Health",
+    excerpt:
+      "Exploring the fascinating gut-brain connection and how what you eat affects your mood.",
+    category: "Science",
+    date: "Jul 22, 2024",
+    author: "Neurosci Daily",
+    image: "/images/blog-veg.png", // Placeholder
   },
 ];
 
@@ -85,7 +115,11 @@ export default function BlogSection() {
             pagination={{
               clickable: true,
               renderBullet: function (index, className) {
-                return '<span class="' + className + ' transition-all duration-300"></span>';
+                return (
+                  '<span class="' +
+                  className +
+                  ' transition-all duration-300"></span>'
+                );
               },
             }}
             onBeforeInit={(swiper) => {
@@ -103,6 +137,63 @@ export default function BlogSection() {
             className="pb-16!"
           >
             {BLOGS.map((blog) => (
+              <SwiperSlide key={blog.id}>
+                <article className="group flex flex-col bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100">
+                  {/* Image Container */}
+                  <div className="relative aspect-4/3 overflow-hidden bg-gray-100">
+                    <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-secondary uppercase tracking-wider">
+                      {blog.category}
+                    </div>
+                    {/* Placeholder for Image */}
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 group-hover:scale-105 transition-transform duration-700">
+                      <span className="text-sm">Image Placeholder</span>
+                    </div>
+
+                    <Image
+                      src={blog.image}
+                      alt={blog.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6 md:p-8 flex flex-col flex-1">
+                    <div className="flex items-center gap-4 text-xs text-gray-400 mb-4 font-medium">
+                      <span className="flex items-center gap-1">
+                        <FaCalendarAlt /> {blog.date}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <FaUser /> {blog.author}
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl md:text-2xl font-bold text-font-title mb-3 group-hover:text-secondary transition-colors line-clamp-2">
+                      <Link
+                        href={`/blogs/${blog.id}`}
+                        className="inset-0 focus:outline-none"
+                      >
+                        {blog.title}
+                      </Link>
+                    </h3>
+
+                    <p className="text-gray-500 text-sm leading-relaxed mb-6 line-clamp-3">
+                      {blog.excerpt}
+                    </p>
+
+                    <div className="mt-auto pt-6 border-t border-gray-50">
+                      <Link
+                        href={`/blogs/${blog.id}`} // Assuming generic route for now
+                        className="text-secondary font-bold text-sm uppercase tracking-wider hover:underline"
+                      >
+                        Read Full Article
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              </SwiperSlide>
+            ))}
+            {/* {BLOGS.map((blog) => (
               <SwiperSlide key={blog.id}>
                 <div className="group cursor-pointer bg-white shadow-xl pb-10 rounded-4xl">
                   <div className="relative p-3 aspect-4/3 w-full overflow-hidden mb-6">
@@ -133,7 +224,7 @@ export default function BlogSection() {
                   </div>
                 </div>
               </SwiperSlide>
-            ))}
+            ))} */}
           </Swiper>
 
           <style jsx global>{`
@@ -151,6 +242,18 @@ export default function BlogSection() {
               border-radius: 9999px;
             }
           `}</style>
+          <div className="flex group justify-center items-center ">
+            <a
+              href="/blogs"
+              className="underline justify-center flex underline-offset-4 decoration-2 w-full mt-4 text-primary hover:text-secondary font-bold"
+            >
+              View All Blogs
+              <HiArrowLongRight
+                size={20}
+                className="ml-2 group-hover:translate-x-2 transition-all duration-300"
+              />
+            </a>
+          </div>
         </div>
       </div>
     </section>

@@ -14,6 +14,10 @@ const CartSchema = new mongoose.Schema({
                     ref: 'Product',
                     required: true,
                },
+               variantId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Variant',
+               },
                quantity: {
                     type: Number,
                     required: true,
@@ -30,9 +34,5 @@ const CartSchema = new mongoose.Schema({
      },
 });
 
-CartSchema.pre('save', function (next) {
-     this.updatedAt = Date.now();
-     next();
-});
 
 export default mongoose.models.Cart || mongoose.model('Cart', CartSchema);

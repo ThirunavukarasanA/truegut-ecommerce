@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Customer from '@/models/Customer';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req) {
      try {
@@ -17,10 +18,13 @@ export async function POST(req) {
                return NextResponse.json({ error: 'Customer already exists' }, { status: 400 });
           }
 
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(password, salt);
+
           const customer = await Customer.create({
                name,
                email,
-               password,
+               password: hashedPassword,
                phone,
                address,
           });

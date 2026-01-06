@@ -4,6 +4,7 @@ import Product from '@/models/Product';
 import Category from '@/models/Category'; // Ensure model is compiled
 import { getAuthenticatedUser } from '@/lib/api-auth';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { generateProductCode, generateSlug } from '@/lib/model-helpers';
 
 export async function GET(req) {
      const user = await getAuthenticatedUser();
@@ -29,7 +30,6 @@ export async function GET(req) {
           if (search) {
                query.$or = [
                     { name: { $regex: search, $options: 'i' } },
-                    { fermentationType: { $regex: search, $options: 'i' } },
                     { description: { $regex: search, $options: 'i' } }
                ];
           }
@@ -66,23 +66,32 @@ export async function POST(req) {
           const body = {
                name: getValue('name'),
                category: getValue('category'),
-               price: parseFloat(getValue('price')),
-               stock: parseInt(getValue('stock') || '0'),
-               openingStock: parseInt(getValue('openingStock') || '0'),
-               status: getValue('status'),
+               // price: REMOVED
+               // stock: REMOVED
+               // openingStock: REMOVED
+               status: getValue('status') || 'draft',
                description: getValue('description'),
-               fermentationType: getValue('fermentationType'),
-               fermentationDuration: getValue('fermentationDuration'),
-               shelfLife: getValue('shelfLife')
+               history: getValue('history'), // Added back as per schema
+               shelfLifeDays: getValue('shelfLifeDays') ? parseInt(getValue('shelfLifeDays')) : undefined,
+               requiresColdShipping: getValue('requiresColdShipping') === 'true',
+               nutrition: getValue('nutrition'),
+               isSubscriptionAvailable: getValue('isSubscriptionAvailable') === 'true',
+
+               // Nested Objects construction
+               fermentation: {
+                    type: getValue('fermentation.type'),
+                    durationDays: getValue('fermentation.durationDays') ? parseInt(getValue('fermentation.durationDays')) : undefined,
+                    liveCulture: getValue('fermentation.liveCulture') === 'true',
+                    alcoholPercentage: getValue('fermentation.alcoholPercentage') ? parseFloat(getValue('fermentation.alcoholPercentage')) : undefined
+               },
+               regulatory: {
+                    warnings: getValue('regulatory.warnings'),
+               }
           };
 
           // Validation
-          if (!body.name || !body.category || isNaN(body.price)) {
-               return NextResponse.json({ success: false, error: 'Name, Category, and Price are required' }, { status: 400 });
-          }
-
-          if (body.price < 0) {
-               return NextResponse.json({ success: false, error: 'Price cannot be negative' }, { status: 400 });
+          if (!body.name || !body.category) {
+               return NextResponse.json({ success: false, error: 'Name and Category are required' }, { status: 400 });
           }
 
           // Real-time Scenario: Verify category exists
@@ -93,7 +102,7 @@ export async function POST(req) {
 
           // Handle Image Uploads
           const newImages = formData.getAll('newImages'); // Returns array of File objects
-          const imageUrls = [];
+          const images = [];
 
           if (newImages && newImages.length > 0) {
                for (const file of newImages) {
@@ -102,12 +111,17 @@ export async function POST(req) {
                          const buffer = Buffer.from(bytes);
                          const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
                          const result = await uploadToCloudinary(base64);
-                         imageUrls.push(result.secure_url);
+                         images.push({
+                              url: result.secure_url,
+                              alt: body.name // Default alt text
+                         });
                     }
                }
           }
 
-          body.images = imageUrls;
+          body.images = images;
+          body.slug = generateSlug(body.name);
+          body.productCode = await generateProductCode(body.name, body.category, Product);
 
           const product = await Product.create(body);
           return NextResponse.json({ success: true, data: product });

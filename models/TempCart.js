@@ -14,6 +14,10 @@ const TempCartSchema = new mongoose.Schema({
                     ref: 'Product',
                     required: true,
                },
+               variantId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Variant',
+               },
                quantity: {
                     type: Number,
                     required: true,
@@ -41,9 +45,5 @@ const TempCartSchema = new mongoose.Schema({
      },
 });
 
-TempCartSchema.pre('save', function (next) {
-     this.updatedAt = Date.now();
-     next();
-});
 
 export default mongoose.models.TempCart || mongoose.model('TempCart', TempCartSchema);

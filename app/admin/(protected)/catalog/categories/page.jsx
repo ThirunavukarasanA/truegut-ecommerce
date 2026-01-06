@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { adminFetch } from "@/lib/adminFetch";
 import { MdAdd, MdDelete, MdEdit, MdInfoOutline } from "react-icons/md";
 import toast from "react-hot-toast";
 import CategoryModal from "./CategoryModal";
@@ -29,13 +31,14 @@ export default function CategoriesPage() {
 
      const fetchCategories = async () => {
           try {
-               const res = await fetch("/api/admin/catalog/categories");
-               const data = await res.json();
+               const data = await adminFetch("/api/admin/catalog/categories");
                if (data.success) {
                     setCategories(data.data);
                }
           } catch (error) {
-               toast.error("Failed to load categories");
+               if (error.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error(error.message || "Failed to load categories");
+               }
           } finally {
                setLoading(false);
           }
@@ -70,10 +73,9 @@ export default function CategoriesPage() {
           if (!categoryToDelete) return;
           const toastId = toast.loading("Deleting category...");
           try {
-               const res = await fetch(`/api/admin/catalog/categories/${categoryToDelete}`, {
+               const data = await adminFetch(`/api/admin/catalog/categories/${categoryToDelete}`, {
                     method: "DELETE",
                });
-               const data = await res.json();
                if (data.success) {
                     setCategories(categories.filter(c => c._id !== categoryToDelete));
                     toast.success("Category deleted", { id: toastId });
@@ -81,7 +83,9 @@ export default function CategoriesPage() {
                     toast.error(data.error || "Delete failed", { id: toastId });
                }
           } catch (error) {
-               toast.error("Failed to delete category", { id: toastId });
+               if (error.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error(error.message || "Failed to delete category", { id: toastId });
+               }
           } finally {
                setCategoryToDelete(null);
                setIsConfirmOpen(false); // Close the modal after action
@@ -94,10 +98,10 @@ export default function CategoriesPage() {
      );
 
      const tableHeaders = [
-          { label: "CategoryName" },
-          { label: "SlugIdentifier" },
-          { label: "ActiveStatus" },
-          { label: "Operations", align: "right" }
+          { label: "Category Name" },
+          { label: "Slug" },
+          { label: "Active" },
+          { label: "Action", align: "right" }
      ];
 
      return (
@@ -121,8 +125,8 @@ export default function CategoriesPage() {
                          className="w-full md:w-96"
                     />
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 bg-white px-5 py-2.5 rounded-xl border border-gray-100 shadow-sm shadow-gray-50/50">
-                         <MdInfoOutline className="text-purple-600" size={16} />
-                         Showing <span className="text-purple-600">{filteredCategories.length}</span> categories
+                         <MdInfoOutline className="text-primary" size={16} />
+                         Showing <span className="text-primary">{filteredCategories.length}</span> categories
                     </div>
                </div>
 
@@ -138,12 +142,12 @@ export default function CategoriesPage() {
                          <tr key={cat._id} className="hover:bg-gray-50/50 transition-colors group">
                               <td className="px-8 py-6">
                                    <div>
-                                        <div className="text-[14px] font-light text-gray-800 group-hover:text-purple-600 transition-colors">{cat.name}</div>
+                                        <div className="text-[14px] font-light text-gray-800 group-hover:text-primary transition-colors">{cat.name}</div>
                                         <div className="text-[11px] font-light text-gray-400 line-clamp-1 mt-1">{cat.description || "No description provided"}</div>
                                    </div>
                               </td>
                               <td className="px-8 py-6">
-                                   <span className="text-[10px] font-mono bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg border border-purple-100 uppercase tracking-wider">
+                                   <span className="text-[10px] font-mono bg-bg-color text-primary px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-wider">
                                         {cat.slug}
                                    </span>
                               </td>
@@ -154,7 +158,7 @@ export default function CategoriesPage() {
                                    <div className="flex justify-end gap-2 pr-2">
                                         <button
                                              onClick={() => openEditModal(cat)}
-                                             className="p-2.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-all border border-transparent hover:border-purple-100/50"
+                                             className="p-2.5 text-gray-400 hover:text-primary hover:bg-bg-color rounded-xl transition-all border border-transparent hover:border-gray-100"
                                              title="Edit"
                                         >
                                              <MdEdit size={18} />

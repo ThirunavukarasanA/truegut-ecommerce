@@ -17,6 +17,7 @@ import MobileBottomNav from "./MobileBottomNav";
 import { useCart } from "../../context/CartContext";
 import { FaUserAlt } from "react-icons/fa";
 import Image from "next/image";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Navbar() {
   const [scrollPosition, setScrollPosition] = useState(false);
@@ -38,6 +39,7 @@ export default function Navbar() {
     };
   }, [isMobileMenuOpen]);
   const { openCart, cartItems } = useCart();
+  const { user } = useAuth();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -55,9 +57,8 @@ export default function Navbar() {
 
       {/* Main Header */}
       <div
-        className={`fixed w-full top-0 z-40 border-b border-gray-200 ${
-          scrollPosition ? "shadow-lg bg-white/80 backdrop-blur" : "bg-white"
-        }`}
+        className={`fixed w-full top-0 z-40 border-b border-gray-200 ${scrollPosition ? "shadow-lg bg-white/80 backdrop-blur" : "bg-white"
+          }`}
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
           {/* Logo */}
@@ -105,11 +106,10 @@ export default function Navbar() {
                   <Link
                     key={link.name}
                     href={link.path}
-                    className={`transition-colors ${
-                      isActive(link.path)
+                    className={`transition-colors ${isActive(link.path)
                         ? "text-secondary"
                         : "hover:text-primary"
-                    }`}
+                      }`}
                   >
                     {link.name}
                   </Link>
@@ -121,8 +121,9 @@ export default function Navbar() {
           {/* User Actions (Desktop) */}
           <div className="hidden md:flex items-center gap-6 text-gray-600">
             <Link
-              href="/account"
+              href={user ? "/account" : "/login"}
               className="flex flex-col items-center gap-1 hover:text-primary transition-colors"
+              title={user ? "My Account" : "Login"}
             >
               <FaUserAlt size={22} />
             </Link>
@@ -171,23 +172,20 @@ export default function Navbar() {
 
       {/* Mobile Menu Sidebar & Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-50 transition-visibility duration-300 ${
-          isMobileMenuOpen ? "visible" : "invisible"
-        }`}
+        className={`md:hidden fixed inset-0 z-50 transition-visibility duration-300 ${isMobileMenuOpen ? "visible" : "invisible"
+          }`}
       >
         {/* Overlay */}
         <div
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-            isMobileMenuOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isMobileMenuOpen ? "opacity-100" : "opacity-0"
+            }`}
           onClick={toggleMobileMenu}
         ></div>
 
         {/* Sidebar Drawer */}
         <div
-          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${
-            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex flex-col h-full">
             {/* Sidebar Header */}
@@ -214,11 +212,10 @@ export default function Navbar() {
                   <Link
                     key={link.name}
                     href={link.path}
-                    className={`px-6 py-3 font-medium border-l-4 transition-all ${
-                      isActive(link.path)
+                    className={`px-6 py-3 font-medium border-l-4 transition-all ${isActive(link.path)
                         ? "text-primary bg-primary/5 border-primary"
                         : "text-gray-700 hover:bg-gray-50 hover:text-primary border-transparent hover:border-primary"
-                    }`}
+                      }`}
                     onClick={toggleMobileMenu}
                   >
                     {link.name}

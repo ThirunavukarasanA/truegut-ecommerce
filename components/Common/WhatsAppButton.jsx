@@ -2,8 +2,16 @@
 import React from "react";
 import { FaWhatsapp } from "react-icons/fa";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function WhatsAppButton() {
+  const pathname = usePathname();
+  const isAdminPage = pathname?.startsWith("/admin");
+
+  if (isAdminPage) {
+    return null;
+  }
+
   return (
     <Link
       href="https://wa.me/919916452199" // Replace with actual number

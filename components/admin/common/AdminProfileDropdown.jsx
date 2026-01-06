@@ -4,10 +4,14 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdPerson, MdSettings, MdLock, MdLogout, MdKeyboardArrowDown } from "react-icons/md";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function AdminProfileDropdown() {
      const [isOpen, setIsOpen] = useState(false);
+     const [loggingOut, setLoggingOut] = useState(false);
      const dropdownRef = useRef(null);
+     const router = useRouter();
 
      useEffect(() => {
           const handleClickOutside = (event) => {
@@ -21,8 +25,31 @@ export default function AdminProfileDropdown() {
 
      const menuItems = [
           { label: "Settings", icon: <MdSettings />, href: "/admin/settings" },
-          { label: "Change Password", icon: <MdLock />, href: "/admin/settings/password" },
+          { label: "Change Password", icon: <MdLock />, href: "/admin/settings?tab=Security" },
      ];
+
+     const handleLogout = async () => {
+          setLoggingOut(true);
+          const toastId = toast.loading("Signing out...");
+
+          try {
+               const res = await fetch("/api/auth/logout", {
+                    method: "POST",
+               });
+
+               const data = await res.json();
+
+               if (res.ok) {
+                    toast.success("Logged out successfully", { id: toastId });
+                    router.push("/admin");
+               } else {
+                    throw new Error(data.error || "Logout failed");
+               }
+          } catch (error) {
+               toast.error(error.message, { id: toastId });
+               setLoggingOut(false);
+          }
+     };
 
      return (
           <div className="relative" ref={dropdownRef}>
@@ -64,9 +91,9 @@ export default function AdminProfileDropdown() {
                                              key={index}
                                              href={item.href}
                                              onClick={() => setIsOpen(false)}
-                                             className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-purple-600 transition-all group"
+                                             className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-primary transition-all group"
                                         >
-                                             <span className="text-gray-400 group-hover:text-purple-500 transition-colors">
+                                             <span className="text-gray-400 group-hover:text-primary transition-colors">
                                                   {item.icon}
                                              </span>
                                              {item.label}
@@ -75,15 +102,16 @@ export default function AdminProfileDropdown() {
 
                                    <div className="h-px bg-gray-100 my-2 mx-2"></div>
 
-                                   <Link
-                                        href="/admin"
-                                        className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all group"
+                                   <button
+                                        onClick={handleLogout}
+                                        disabled={loggingOut}
+                                        className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium text-red-500 hover:bg-red-50 transition-all group w-full disabled:opacity-50 disabled:cursor-not-allowed"
                                    >
                                         <span className="text-red-400 group-hover:text-red-500 transition-colors">
                                              <MdLogout />
                                         </span>
-                                        Log Out
-                                   </Link>
+                                        {loggingOut ? "Logging out..." : "Log Out"}
+                                   </button>
                               </div>
                          </motion.div>
                     )}

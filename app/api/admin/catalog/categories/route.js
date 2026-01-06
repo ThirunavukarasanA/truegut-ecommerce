@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import Category from '@/models/Category';
 import { getAuthenticatedUser } from '@/lib/api-auth';
+import { generateSlug } from '@/lib/model-helpers';
 
 export async function GET() {
      const user = await getAuthenticatedUser();
@@ -40,7 +41,8 @@ export async function POST(req) {
 
           const category = await Category.create({
                ...body,
-               name: body.name.trim()
+               name: body.name.trim(),
+               slug: generateSlug(body.name.trim())
           });
 
           return NextResponse.json({ success: true, data: category });

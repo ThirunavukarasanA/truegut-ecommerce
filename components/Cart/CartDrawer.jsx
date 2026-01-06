@@ -7,7 +7,6 @@ import { useCart } from "../../context/CartContext";
 
 export default function CartDrawer() {
   const { isCartOpen, closeCart, cartItems, removeFromCart } = useCart();
-
   // Disable body scroll when cart is open
   useEffect(() => {
     if (isCartOpen) {
@@ -22,23 +21,20 @@ export default function CartDrawer() {
 
   return (
     <div
-      className={`fixed inset-0 z-50 transition-visibility duration-300 ${
-        isCartOpen ? "visible" : "invisible"
-      }`}
+      className={`fixed inset-0 z-50 transition-visibility duration-300 ${isCartOpen ? "visible" : "invisible"
+        }`}
     >
       {/* Overlay */}
       <div
-        className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
-          isCartOpen ? "opacity-100" : "opacity-0"
-        }`}
+        className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isCartOpen ? "opacity-100" : "opacity-0"
+          }`}
         onClick={closeCart}
       ></div>
 
       {/* Drawer */}
       <div
-        className={`absolute top-0 right-0 w-full md:w-[400px] h-full bg-white shadow-2xl transition-transform duration-300 ease-in-out transform ${
-          isCartOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`absolute top-0 right-0 w-full md:w-[400px] h-full bg-white shadow-2xl transition-transform duration-300 ease-in-out transform ${isCartOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -75,13 +71,17 @@ export default function CartDrawer() {
                         src={item.image}
                         alt={item.name}
                         fill
+                        sizes="80px"
                         className="object-contain p-2 mix-blend-multiply"
                       />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium text-font-title text-sm mb-1 line-clamp-2">
-                        <Link href={`/product/${item.id}`}>{item.name}</Link>
+                        <Link href={`/collections/${item.slug || item.id}`}>{item.name}</Link>
                       </h3>
+                      {item.variantId && (
+                        <p className="text-xs text-gray-400 mb-1">Variant: {item.name?.includes("Variant") ? item.name : item.variantName || "Standard"}</p>
+                      )}
                       <div className="flex justify-between items-center mt-2">
                         <div className="text-sm text-gray-500">
                           {item.quantity} x{" "}
@@ -90,7 +90,7 @@ export default function CartDrawer() {
                           </span>
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.id)}
+                          onClick={() => removeFromCart(item.id, item.variantId)}
                           className="text-gray-400 hover:text-red-500 transition-colors"
                         >
                           <FiTrash2 size={18} />
@@ -118,9 +118,13 @@ export default function CartDrawer() {
                     .toFixed(2)}
                 </span>
               </div>
-              <button className="w-full bg-primary text-white py-3 rounded-sm font-bold hover:bg-opacity-90 transition-opacity mb-2">
+              <Link
+                href="/checkout"
+                onClick={closeCart}
+                className="block w-full bg-primary text-white text-center py-3 rounded-sm font-bold hover:bg-opacity-90 transition-opacity mb-2"
+              >
                 CHECKOUT
-              </button>
+              </Link>
               <Link
                 href="/cart"
                 onClick={closeCart}

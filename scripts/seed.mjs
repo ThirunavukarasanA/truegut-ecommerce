@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 dotenv.config({ path: '.env.local' });
 dotenv.config();
 import mongoose from 'mongoose';
@@ -30,18 +31,19 @@ const seedUsers = async () => {
           ];
 
           for (const u of users) {
-               // Check if user exists
-               const exists = await User.findOne({ email: u.email });
-               if (exists) {
-                    console.log(`⚠️ User ${u.email} already exists. Skipping.`);
-                    continue;
-               }
+               for (const u of users) {
+                    // Hash password
+                    const salt = await bcrypt.genSalt(10);
+                    const hashedPassword = await bcrypt.hash(u.password, salt);
 
-               // Create user - pre-save hook will hash password
-               // We explicitly create a new instance to ensure pre-save hooks run properly if using insertMany might bypass? 
-               // User.create triggers save, so hooks run.
-               await User.create(u);
-               console.log(`✅ Created user: ${u.email} (Role: ${u.role})`);
+                    // Upsert user (Create or Update)
+                    await User.findOneAndUpdate(
+                         { email: u.email },
+                         { ...u, password: hashedPassword },
+                         { upsert: true, new: true, setDefaultsOnInsert: true }
+                    );
+                    console.log(`✅ Seeded user: ${u.email} (Role: ${u.role})`);
+               }
           }
 
           console.log('🎉 Seeding complete!');

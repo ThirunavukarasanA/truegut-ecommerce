@@ -26,7 +26,10 @@ export async function GET(req) {
                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
           }
 
-          const tempCarts = await TempCart.find().sort({ updatedAt: -1 });
+          const tempCarts = await TempCart.find()
+               .populate('items.productId', 'name image images price productCode')
+               .populate('items.variantId', 'name price sku')
+               .sort({ updatedAt: -1 });
           return NextResponse.json({ tempCarts });
      } catch (error) {
           return NextResponse.json({ error: error.message }, { status: 500 });
