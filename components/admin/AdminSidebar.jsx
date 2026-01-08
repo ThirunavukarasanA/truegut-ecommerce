@@ -143,7 +143,7 @@ export default function AdminSidebar() {
                     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
                     <div className="h-16 flex items-center justify-center border-b border-gray-100 bg-white/80 backdrop-blur-sm shrink-0">
                          <h1 className="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-                              FERMENTAA
+                              TRUEGUT
                               <span className="text-xs ml-1 font-light text-primary">ADMIN</span>
                          </h1>
                     </div>

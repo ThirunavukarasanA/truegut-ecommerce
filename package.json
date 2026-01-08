@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3051",
+    "dev": "next dev -p 3052",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -24,6 +24,7 @@
     "react-dom": "19.2.1",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
+    "react-quill-new": "^3.7.0",
     "recharts": "^3.6.0",
     "swiper": "^12.0.3",
     "tailwindcss-safe-area": "^1.3.0",

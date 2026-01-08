@@ -48,8 +48,8 @@ export default function ViewOneCollection() {
             customerId: user.id || user._id,
             name: user.name,
             email: user.email,
-            phone: user.phone || null
-          })
+            phone: user.phone || null,
+          }),
         });
         const data = await res.json();
         if (data.success) {
@@ -78,7 +78,9 @@ export default function ViewOneCollection() {
         if (data.success) {
           const p = data.product;
           // Normalize Images
-          const images = p.images?.map((img) => (typeof img === "string" ? img : img.url)) || [];
+          const images =
+            p.images?.map((img) => (typeof img === "string" ? img : img.url)) ||
+            [];
           if (p.image) images.unshift(p.image);
 
           setProduct({
@@ -90,7 +92,8 @@ export default function ViewOneCollection() {
 
           // Set default variant
           if (p.variants && p.variants.length > 0) {
-            const defaultVar = p.variants.find((v) => v.stock > 0) || p.variants[0];
+            const defaultVar =
+              p.variants.find((v) => v.stock > 0) || p.variants[0];
             setSelectedVariant(defaultVar);
           }
         }
@@ -205,10 +208,11 @@ export default function ViewOneCollection() {
                   <button
                     key={idx}
                     onClick={() => setActiveImage(img)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 transition-all ${activeImage === img
-                      ? "border-primary"
-                      : "border-transparent hover:border-gray-200"
-                      }`}
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 transition-all ${
+                      activeImage === img
+                        ? "border-primary"
+                        : "border-transparent hover:border-gray-200"
+                    }`}
                   >
                     <Image
                       src={img}
@@ -230,9 +234,21 @@ export default function ViewOneCollection() {
 
             <div className="flex items-center gap-2 mb-6 text-sm">
               <span className="font-bold text-gray-700">Availability :</span>
-              <span className={`flex items-center gap-1 ${selectedVariant?.stock > 0 ? "text-green-500" : "text-red-500"}`}>
-                <span className={`w-2 h-2 rounded-full ${selectedVariant?.stock > 0 ? "bg-green-500 animate-pulse" : "bg-red-500"}`}></span>
-                {selectedVariant?.stock > 0 ? `In Stock (${selectedVariant.stock})` : "Out of Stock"}
+              <span
+                className={`flex items-center gap-1 ${
+                  selectedVariant?.stock > 0 ? "text-green-500" : "text-red-500"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    selectedVariant?.stock > 0
+                      ? "bg-green-500 animate-pulse"
+                      : "bg-red-500"
+                  }`}
+                ></span>
+                {selectedVariant?.stock > 0
+                  ? `In Stock (${selectedVariant.stock})`
+                  : "Out of Stock"}
               </span>
             </div>
 
@@ -243,15 +259,22 @@ export default function ViewOneCollection() {
               {/* Old price logic could be added if variants have msrp/oldPrice */}
             </div>
 
-            <p className="text-gray-600 leading-relaxed mb-8">
-              {product.detailedDescription || product.description}
-            </p>
+            <div
+              className="text-gray-600 leading-relaxed mb-8 rich-text-content wrap-break-word w-full"
+              dangerouslySetInnerHTML={{
+                __html:
+                  product.detailedDescription || product.description || "",
+              }}
+            />
 
             {/* Dynamic Variant Selector */}
             {product.variants && product.variants.length > 0 && (
               <div className="mb-8">
                 <p className="font-bold text-gray-800 mb-2">
-                  Size / Variant : <span className="font-normal text-gray-500">{selectedVariant?.name}</span>
+                  Size / Variant :{" "}
+                  <span className="font-normal text-gray-500">
+                    {selectedVariant?.name}
+                  </span>
                 </p>
                 <div className="flex gap-3 flex-wrap">
                   {product.variants.map((variant) => (
@@ -260,11 +283,16 @@ export default function ViewOneCollection() {
                       onClick={() => setSelectedVariant(variant)}
                       disabled={!variant.isActive} // or stock === 0 if you want to disable out of stock
                       className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors
-                            ${selectedVariant?._id === variant._id
-                          ? "border-primary text-primary bg-primary/5"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
-                        }
-                            ${(!variant.isActive) ? "opacity-50 cursor-not-allowed bg-gray-50" : ""}
+                            ${
+                              selectedVariant?._id === variant._id
+                                ? "border-primary text-primary bg-primary/5"
+                                : "border-gray-200 text-gray-600 hover:border-gray-300"
+                            }
+                            ${
+                              !variant.isActive
+                                ? "opacity-50 cursor-not-allowed bg-gray-50"
+                                : ""
+                            }
                         `}
                     >
                       {variant.name}
@@ -345,23 +373,78 @@ export default function ViewOneCollection() {
           {/* Tab Headers */}
           <div className="flex justify-center mb-12 overflow-x-auto">
             <div className="flex items-center gap-8 min-w-max px-4">
-              {["Description", "Nutrition", "History"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`pb-4 text-lg font-bold uppercase tracking-wide transition-colors relative ${activeTab === tab.toLowerCase()
-                    ? "text-gray-800"
-                    : "text-gray-400 hover:text-gray-600"
+              {["Description", "Nutrition", "History", "Microbial Profile"].map(
+                (tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab.toLowerCase())}
+                    className={`pb-4 text-lg font-bold uppercase tracking-wide transition-colors relative ${
+                      activeTab === tab.toLowerCase()
+                        ? "text-gray-800"
+                        : "text-gray-400 hover:text-gray-600"
                     }`}
-                >
-                  {tab}
-                  {activeTab === tab.toLowerCase() && (
-                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></span>
-                  )}
-                </button>
-              ))}
+                  >
+                    {tab}
+                    {activeTab === tab.toLowerCase() && (
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></span>
+                    )}
+                  </button>
+                )
+              )}
             </div>
           </div>
+
+          {/* Style for Rich Text Content */}
+          <style jsx global>{`
+            .rich-text-content {
+              word-break: break-word;
+              overflow-wrap: break-word; /* standard */
+              overflow-wrap: anywhere; /* forces break at soft hyphens/nbsp if needed */
+              max-width: 100%;
+            }
+            .rich-text-content h1,
+            .rich-text-content h2,
+            .rich-text-content h3 {
+              font-weight: 700;
+              margin-bottom: 0.75rem;
+              margin-top: 1.5rem;
+              color: #1f2937;
+              overflow-wrap: break-word;
+            }
+            .rich-text-content p {
+              margin-bottom: 1rem;
+              line-height: 1.75;
+              overflow-wrap: break-word;
+            }
+            .rich-text-content ul {
+              list-style-type: disc;
+              padding-left: 1.5rem;
+              margin-bottom: 1rem;
+            }
+            .rich-text-content ol {
+              list-style-type: decimal;
+              padding-left: 1.5rem;
+              margin-bottom: 1rem;
+            }
+            .rich-text-content strong {
+              font-weight: 700;
+              color: #111827;
+            }
+            .rich-text-content em {
+              font-style: italic;
+            }
+            .rich-text-content a {
+              color: #ea580c;
+              text-decoration: underline;
+            }
+            .rich-text-content blockquote {
+              border-left: 4px solid #e5e7eb;
+              padding-left: 1rem;
+              font-style: italic;
+              color: #4b5563;
+              margin-bottom: 1rem;
+            }
+          `}</style>
 
           {/* Tab Content */}
           <div className="max-w-4xl mx-auto min-h-[200px]">
@@ -370,9 +453,14 @@ export default function ViewOneCollection() {
                 <h4 className="text-lg font-bold text-gray-800 mb-6">
                   Description
                 </h4>
-                <p className="text-gray-600 leading-relaxed">
-                  {product.detailedDescription || product.description}
-                </p>
+                <div
+                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      product.detailedDescription || product.description || "",
+                  }}
+                />
+
                 {product.specs && product.specs.length > 0 && (
                   <div className="mt-8">
                     <h4 className="text-lg font-bold text-gray-800 mb-4">
@@ -391,13 +479,16 @@ export default function ViewOneCollection() {
             {activeTab === "nutrition" && (
               <div className="animate-fadeIn">
                 <h4 className="text-lg font-bold text-gray-800 mb-6">
-                  Nutrition Information
+                  Nutrition & Ingredients Information
                 </h4>
-                <p className="text-gray-600 leading-relaxed">
-                  {product.nutrition ||
-                    "Our products are crafted with care, respecting traditional fermentation methods that have been passed down through generations. We believe in the power of time and natural ingredients to create foods that strictly adhere to organic standards, ensuring you get the best nature has to offer."}
-                </p>
-
+                <div
+                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      product.nutrition ||
+                      "Our products are crafted with care...",
+                  }}
+                />
               </div>
             )}
 
@@ -406,10 +497,30 @@ export default function ViewOneCollection() {
                 <h4 className="text-lg font-bold text-gray-800 mb-6">
                   Product History
                 </h4>
-                <p className="text-gray-600 leading-relaxed">
-                  {product.history ||
-                    "Our products are crafted with care, respecting traditional fermentation methods that have been passed down through generations. We believe in the power of time and natural ingredients to create foods that strictly adhere to organic standards, ensuring you get the best nature has to offer."}
-                </p>
+                <div
+                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      product.history ||
+                      "Our products are crafted with care...",
+                  }}
+                />
+              </div>
+            )}
+
+            {activeTab === "microbial profile" && (
+              <div className="animate-fadeIn">
+                <h4 className="text-lg font-bold text-gray-800 mb-6">
+                  Microbial Profile
+                </h4>
+                <div
+                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      product.microbialProfile ||
+                      "Microbial profile details not available.",
+                  }}
+                />
               </div>
             )}
           </div>

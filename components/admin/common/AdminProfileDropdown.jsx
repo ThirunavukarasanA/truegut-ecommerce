@@ -78,11 +78,11 @@ export default function AdminProfileDropdown() {
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 10, scale: 0.95 }}
                               transition={{ duration: 0.2, ease: "easeOut" }}
-                              className="absolute right-0 mt-4 w-56 bg-white rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden z-[100]"
+                              className="absolute right-0 mt-4 w-56 bg-white rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden z-100"
                          >
                               <div className="p-5 bg-gray-50/50 border-b border-gray-100">
                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Account</p>
-                                   <p className="text-sm font-semibold text-gray-800">admin@fermentaa.com</p>
+                                   <p className="text-sm font-semibold text-gray-800">admin@truegut.com</p>
                               </div>
 
                               <div className="p-2">

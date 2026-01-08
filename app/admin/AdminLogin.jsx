@@ -118,7 +118,7 @@ export default function AdminLogin() {
                     </form>
 
                     <div className="mt-10 text-center">
-                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">© {new Date().getFullYear()} Fermentaa Boutique</p>
+                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">© {new Date().getFullYear()} Truegut</p>
                     </div>
                </div>
           </div>

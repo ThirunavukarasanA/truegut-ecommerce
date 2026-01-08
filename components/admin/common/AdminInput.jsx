@@ -17,7 +17,7 @@ export default function AdminInput({ label, error, icon: Icon, className = "", i
                          </div>
                     )}
                     {Icon && isTextArea && (
-                         <div className="absolute left-5 top-5 text-gray-400">
+                         <div className="absolute left-5 top-4 text-gray-400">
                               <Icon size={18} />
                          </div>
                     )}

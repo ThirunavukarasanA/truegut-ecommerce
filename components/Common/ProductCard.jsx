@@ -8,6 +8,8 @@ import { useCart } from "../../context/CartContext";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
+  console.log("product : ", product);
+
   return (
     <div className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col relative">
       {/* Supplier Tag */}
@@ -19,7 +21,10 @@ export default function ProductCard({ product }) {
 
       {/* Image Container */}
       <div className="relative rounded-2xl overflow-hidden mb-6 aspect-4/3 w-full bg-gray-50">
-        <Link href={`/collections/${product.slug}`} className="block w-full h-full">
+        <Link
+          href={`/collections/${product.slug}`}
+          className="block w-full h-full"
+        >
           <Image
             src={product.image}
             alt={product.name}
@@ -34,6 +39,14 @@ export default function ProductCard({ product }) {
         <h3 className="font-bold italic text-primary text-xl mb-2 uppercase tracking-tight">
           <Link href={`/collections/${product.slug}`}>{product.name}</Link>
         </h3>
+        <Link href={`/collections/${product.slug}`}>
+          <p
+            className="text-gray-500 text-sm mb-2 rich-text-content wrap-break-word line-clamp-2"
+            dangerouslySetInnerHTML={{
+              __html: product.description,
+            }}
+          ></p>
+        </Link>
 
         {/* Price and Action Row */}
         <div className="mt-auto flex items-end justify-between">
@@ -41,7 +54,10 @@ export default function ProductCard({ product }) {
             <span className="font-bold text-font-title text-2xl">
               ₹{product.price}
             </span>
-            <Link href="#" className="text-[10px] font-bold text-green-600 underline uppercase tracking-wider hover:text-primary transition-colors">
+            <Link
+              href="#"
+              className="text-[10px] font-bold text-green-600 underline uppercase tracking-wider hover:text-primary transition-colors"
+            >
               VIEW LAB CERTIFICATE
             </Link>
           </div>
