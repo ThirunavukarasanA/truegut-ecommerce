@@ -3,10 +3,20 @@
 import { useState, useEffect } from "react";
 import { MdClose } from "react-icons/md";
 import toast from "react-hot-toast";
+import { adminFetchWithToast } from "@/lib/admin/adminFetch";
 import AdminInput from "@/components/admin/common/AdminInput";
 
 export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
-     const [formData, setFormData] = useState({ name: "", email: "", phone: "", address: "", pincodes: "", stock: 0 });
+     const [formData, setFormData] = useState({
+          name: "",
+          companyName: "",
+          email: "",
+          phone: "",
+          address: "",
+          pincode: "",
+          pincodes: "",
+          // stock: 0 
+     });
      const [submitting, setSubmitting] = useState(false);
 
      // Reset/Populate form when modal opens
@@ -15,14 +25,25 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                if (initialData) {
                     setFormData({
                          name: initialData.name || "",
+                         companyName: initialData.companyName || "",
                          email: initialData.email || "",
                          phone: initialData.phone || "",
                          address: initialData.address || "",
+                         pincode: initialData.pincode || "",
                          pincodes: initialData.serviceablePincodes ? initialData.serviceablePincodes.join(", ") : "",
-                         stock: initialData.stock || 0
+                         // stock: initialData.stock || 0 // Deprecated in favor of Batch Stock
                     });
                } else {
-                    setFormData({ name: "", email: "", phone: "", address: "", pincodes: "", stock: 0 });
+                    setFormData({
+                         name: "",
+                         companyName: "",
+                         email: "",
+                         phone: "",
+                         address: "",
+                         pincode: "",
+                         pincodes: "",
+                         // stock: 0 
+                    });
                }
           }
      }, [isOpen, initialData]);
@@ -40,7 +61,6 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
      const handleSubmit = async (e) => {
           e.preventDefault();
           setSubmitting(true);
-          const toastId = toast.loading(initialData ? "Updating vendor..." : "Registering vendor...");
 
           try {
                const payload = {
@@ -53,21 +73,27 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                const url = initialData ? `/api/admin/vendors/${initialData._id}` : "/api/admin/vendors";
                const method = initialData ? "PATCH" : "POST";
 
-               const res = await fetch(url, {
-                    method,
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-               });
-               const data = await res.json();
+               const data = await adminFetchWithToast(
+                    url,
+                    {
+                         method,
+                         body: JSON.stringify(payload),
+                    },
+                    {
+                         loading: initialData ? "Updating vendor..." : "Registering vendor...",
+                         success: initialData ? "Vendor updated" : "Vendor registered successfully",
+                         error: "Operation failed"
+                    },
+                    toast
+               );
+
                if (data.success) {
-                    toast.success(initialData ? "Vendor updated" : "Vendor registered successfully", { id: toastId });
                     onSave();
                     onClose();
-               } else {
-                    toast.error(data.error || "Operation failed", { id: toastId });
                }
           } catch (e) {
-               toast.error("An error occurred", { id: toastId });
+               // Error handled by adminFetchWithToast
+               console.error(e);
           } finally {
                setSubmitting(false);
           }
@@ -95,11 +121,20 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                               <div className="grid grid-cols-2 gap-6">
                                    <div className="col-span-2">
                                         <AdminInput
-                                             label="Corporate Identity"
+                                             label="Company Name"
+                                             required
+                                             value={formData.companyName}
+                                             onChange={e => setFormData({ ...formData, companyName: e.target.value })}
+                                             placeholder="e.g. Fresh Ferment Co."
+                                        />
+                                   </div>
+                                   <div className="col-span-2">
+                                        <AdminInput
+                                             label="Contact Person"
                                              required
                                              value={formData.name}
                                              onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                             placeholder="e.g. Fresh Ferment Co."
+                                             placeholder="e.g. True Ferment"
                                         />
                                    </div>
                                    <div>
@@ -109,7 +144,7 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                                              value={formData.email}
                                              onChange={e => setFormData({ ...formData, email: e.target.value })}
                                              type="email"
-                                             placeholder="partners@freshferment.com"
+                                             placeholder="e.g. partners@trueferment.com"
                                         />
                                    </div>
                                    <div>
@@ -118,25 +153,33 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                                              required
                                              value={formData.phone}
                                              onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                             placeholder="+1 (555) 000-0000"
+                                             placeholder="+91 9876543210"
+                                        />
+                                   </div>
+                                   <div>
+                                        <AdminInput
+                                             label="Warehouse Pincode"
+                                             required
+                                             value={formData.pincode}
+                                             onChange={e => setFormData({ ...formData, pincode: e.target.value })}
+                                             placeholder="Your Pincode"
                                         />
                                    </div>
                                    <div className="col-span-2">
+                                        <AdminInput
+                                             label="Full Address"
+                                             value={formData.address}
+                                             onChange={e => setFormData({ ...formData, address: e.target.value })}
+                                             placeholder="Street, City, State..."
+                                        />
+                                   </div>
+                                   {/* Removed Serviceable Pincodes from here as it is managed via Mapping Page now */}
+                                   <div className="col-span-2 hidden">
                                         <AdminInput
                                              label="Logistics Hubs (Comma separated)"
                                              value={formData.pincodes}
                                              onChange={e => setFormData({ ...formData, pincodes: e.target.value })}
                                              placeholder="110001, 110002..."
-                                        />
-                                   </div>
-                                   <div className="col-span-2">
-                                        <AdminInput
-                                             label="Initial Stock Inventory"
-                                             type="number"
-                                             value={formData.stock}
-                                             onChange={e => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                                             placeholder="0"
-                                             min="0"
                                         />
                                    </div>
                               </div>
@@ -150,7 +193,7 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                               onClick={onClose}
                               className="flex-1 px-8 py-5 bg-gray-100 text-gray-500 font-black rounded-[1.25rem] hover:bg-gray-200 hover:text-gray-600 transition-all uppercase text-[11px] tracking-[0.2em]"
                          >
-                              Abort
+                              Cancel
                          </button>
                          <button
                               form="vendor-form"
@@ -158,7 +201,7 @@ export default function VendorModal({ isOpen, onClose, onSave, initialData }) {
                               disabled={submitting}
                               className="flex-1 px-8 py-5 bg-primary text-white font-black rounded-[1.25rem] hover:bg-secondary transition-all shadow-xl shadow-gray-200 disabled:opacity-50 uppercase text-[11px] tracking-[0.2em]"
                          >
-                              {submitting ? "Processing..." : (initialData ? "Update Partner" : "Authorize Partner")}
+                              {submitting ? "Processing..." : (initialData ? "Update Vendor" : "Register Vendor")}
                          </button>
                     </div>
                </div>

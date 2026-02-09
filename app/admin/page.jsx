@@ -20,14 +20,7 @@ export const metadata = {
           description: "Admin panel for TrueGut",
           url: "",
           siteName: "",
-          // images: [
-          //   {
-          //     url: "https://makecomponents.com/Image/footer/footer002.webp", // Must be an absolute URL
-          //     width: 800,
-          //     height: 600,
-          //     alt: "foote components",
-          //   },
-          // ],
+
           locale: "en_US",
           type: "website",
      },

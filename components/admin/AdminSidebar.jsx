@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IconContext } from "react-icons";
 import {
      MdDashboard,
@@ -20,79 +20,13 @@ import {
      MdLayers,
      MdAssignment,
      MdLocalShipping,
-     MdNotifications
+     MdNotifications,
+     MdMap
 } from "react-icons/md";
 import toast from "react-hot-toast";
 
-const menuItems = [
-     {
-          name: "Dashboard",
-          icon: <MdDashboard />,
-          path: "/admin/dashboard"
-     },
-     {
-          name: "Catalog",
-          icon: <MdInventory />,
-          submenu: [
-               { name: "Categories", path: "/admin/catalog/categories", icon: <MdCategory /> },
-               { name: "Products", path: "/admin/catalog/products", icon: <MdLayers /> },
-               { name: "Variants", path: "/admin/catalog/variants", icon: <MdLayers /> },
-          ]
-     },
-     {
-          name: "Stock Management", // Changed from "Stock Management"
-          icon: <MdLayers />, // Changed icon to MdLayers
-          path: "/admin/stockmanagement" // Changed path
-     },
-
-     {
-          name: "Vendors",
-          icon: <MdStore />,
-          submenu: [
-               { name: "Vendor List", path: "/admin/vendors/list" },
-          ]
-     },
-     {
-          name: "Orders",
-          icon: <MdShoppingCart />,
-          submenu: [
-               { name: "All Orders", path: "/admin/orders/all" },
-               { name: "Returns", path: "/admin/orders/returns" },
-               { name: "Temp Carts", path: "/admin/temp-carts", icon: <MdShoppingCart /> },
-          ]
-     },
-     {
-          name: "Hyperlocal",
-          icon: <MdLocationOn />,
-          submenu: [
-               { name: "Pincodes", path: "/admin/hyperlocal/pincodes" },
-               { name: "Serviceability", path: "/admin/hyperlocal/serviceability" },
-               { name: "Area Products", path: "/admin/hyperlocal/area-products" },
-          ]
-     },
-     {
-          name: "Customers",
-          icon: <MdPeople />,
-          path: "/admin/customers"
-     },
-     {
-          name: "Restock Requests", // Added new item
-          icon: <MdNotifications />, // Added icon for Restock Requests
-          path: "/admin/restock-requests" // Added path for Restock Requests
-     },
-     {
-          name: "Reports",
-          icon: <MdBarChart />,
-          path: "/admin/reports"
-     },
-     {
-          name: "Settings",
-          icon: <MdSettings />,
-          path: "/admin/settings"
-     },
-];
-
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
+import { adminFetchWithToast, adminFetch } from "@/lib/admin/adminFetch";
 
 export default function AdminSidebar() {
      const pathname = usePathname();
@@ -100,30 +34,137 @@ export default function AdminSidebar() {
      const [openMenus, setOpenMenus] = useState({});
      const [loggingOut, setLoggingOut] = useState(false);
      const { isSidebarOpen, closeSidebar } = useAdminSidebar();
+     const [userRole, setUserRole] = useState(null);
+     const [menuItems, setMenuItems] = useState([]);
 
-     const toggleMenu = (name) => {
-          setOpenMenus(prev => ({ ...prev, [name]: !prev[name] }));
+     useEffect(() => {
+          const fetchUser = async () => {
+               try {
+                    const res = await adminFetch("/api/auth/me");
+                    if (res && res.user) {
+                         setUserRole(res.user.role);
+                         generateMenu(res.user.role);
+                    }
+               } catch (error) {
+                    console.error("Failed to fetch user role", error);
+               }
+          };
+          fetchUser();
+     }, []);
+
+     const generateMenu = (role) => {
+          if (role === 'vendor') {
+               setMenuItems([
+                    {
+                         name: "My Orders",
+                         icon: <MdShoppingCart />,
+                         path: "/admin/orders/vendor"
+                    },
+                    {
+                         name: "Settings", // Maybe profile?
+                         icon: <MdSettings />,
+                         path: "/admin/settings" // Or profile page
+                    }
+               ]);
+               return;
+          }
+
+          // Admin Menu
+          setMenuItems([
+               {
+                    name: "Dashboard",
+                    icon: <MdDashboard />,
+                    path: "/admin/dashboard"
+               },
+               {
+                    name: "Catalog",
+                    icon: <MdInventory />,
+                    submenu: [
+                         { name: "Categories", path: "/admin/catalog/categories", icon: <MdCategory /> },
+                         { name: "Products", path: "/admin/catalog/products", icon: <MdLayers /> },
+                         { name: "Variants", path: "/admin/catalog/variants", icon: <MdLayers /> },
+                    ]
+               },
+               {
+                    name: "Stock Management",
+                    icon: <MdLayers />,
+                    submenu: [
+                         { name: "Add Batch", path: "/admin/stockmanagement" }, // Keeping existing path as main/add
+                         { name: "Allocate Stock", path: "/admin/stockmanagement/allocate" }, // New
+                    ]
+               },
+               {
+                    name: "Vendors",
+                    icon: <MdStore />,
+                    submenu: [
+                         { name: "Vendor List", path: "/admin/vendors/list" },
+                         { name: "Pincode Mapping", path: "/admin/pincodes/mapping" }, // New
+                         { name: "Vendor Stock", path: "/admin/vendors/vendor-stock" },
+
+                    ]
+               },
+               {
+                    name: "Orders",
+                    icon: <MdShoppingCart />,
+                    submenu: [
+                         { name: "All Orders", path: "/admin/orders/all" },
+                         { name: "Returns", path: "/admin/orders/returns" },
+                         { name: "Temp Carts", path: "/admin/temp-carts", icon: <MdShoppingCart /> },
+                         { name: "Vendor Orders", path: "/admin/orders/vendor" }, // Admin view of vendor orders
+                    ]
+               },
+               {
+                    name: "Pincodes",
+                    icon: <MdLocationOn />,
+                    path: "/admin/pincodes"
+               },
+               {
+                    name: "Customers",
+                    icon: <MdPeople />,
+                    path: "/admin/customers"
+               },
+               {
+                    name: "Restock Requests",
+                    icon: <MdNotifications />,
+                    path: "/admin/restock-requests"
+               },
+               {
+                    name: "Reports",
+                    icon: <MdBarChart />,
+                    path: "/admin/reports"
+               },
+               {
+                    name: "Settings",
+                    icon: <MdSettings />,
+                    path: "/admin/settings"
+               },
+          ]);
+     };
+
+     const toggleMenu = (name, isActive) => {
+          setOpenMenus(prev => {
+               const currentState = prev[name] !== undefined ? prev[name] : isActive;
+               return { ...prev, [name]: !currentState };
+          });
      };
 
      const handleLogout = async () => {
           setLoggingOut(true);
-          const toastId = toast.loading("Signing out...");
 
           try {
-               const res = await fetch("/api/auth/logout", {
-                    method: "POST",
-               });
-
-               const data = await res.json();
-
-               if (res.ok) {
-                    toast.success("Logged out successfully", { id: toastId });
-                    router.push("/admin");
-               } else {
-                    throw new Error(data.error || "Logout failed");
-               }
+               await adminFetchWithToast(
+                    "/api/auth/logout",
+                    { method: "POST" },
+                    {
+                         loading: "Signing out...",
+                         success: "Logged out successfully",
+                         error: "Logout failed"
+                    },
+                    toast
+               );
+               router.push("/admin");
           } catch (error) {
-               toast.error(error.message, { id: toastId });
+               console.error(error);
                setLoggingOut(false);
           }
      };
@@ -158,7 +199,7 @@ export default function AdminSidebar() {
                                         return (
                                              <div key={item.name} className="mb-1">
                                                   <button
-                                                       onClick={() => toggleMenu(item.name)}
+                                                       onClick={() => toggleMenu(item.name, isActive)}
                                                        className={`flex items-center justify-between w-full px-4 py-3 rounded-xl transition-all duration-200 group
                           ${isActive ? "text-primary bg-bg-color font-normal" : "text-gray-500 hover:bg-bg-color hover:text-primary font-light"}`}
                                                   >

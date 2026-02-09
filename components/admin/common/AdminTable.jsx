@@ -1,5 +1,8 @@
 "use client";
 
+import React from 'react';
+import Loader from './Loader';
+
 export default function AdminTable({
      headers,
      children,
@@ -29,7 +32,7 @@ export default function AdminTable({
                                    <tr>
                                         <td colSpan={colCount} className="px-8 py-20 text-center">
                                              <div className="flex flex-col items-center gap-4">
-                                                  <div className="w-12 h-12 border-4 border-gray-100 border-t-primary rounded-full animate-spin"></div>
+                                                  <Loader size="large" />
                                                   <p className="text-gray-400 font-light text-xs animate-pulse tracking-widest uppercase">{loadingMessage}</p>
                                              </div>
                                         </td>

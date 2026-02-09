@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import {
      MdArrowBack, MdPerson, MdMail, MdPhone, MdLocationOn,
      MdHistory, MdPayment, MdAccountBalanceWallet, MdTrendingUp,
-     MdCheckCircle, MdSchedule, MdCancel, MdLocalShipping
+     MdCheckCircle, MdSchedule, MdCancel, MdLocalShipping, MdVisibility
 } from "react-icons/md";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -16,6 +16,7 @@ import AdminTabs from "@/components/admin/common/AdminTabs";
 import AdminCard from "@/components/admin/common/AdminCard";
 import AdminTable from "@/components/admin/common/AdminTable";
 import AdminStatusBadge from "@/components/admin/common/AdminStatusBadge";
+import Loader from "@/components/admin/common/Loader";
 
 export default function CustomerDetailPage() {
      const { id } = useParams();
@@ -47,13 +48,7 @@ export default function CustomerDetailPage() {
      };
 
      if (loading) {
-          return (
-               <div className="space-y-8 animate-pulse">
-                    <div className="h-20 bg-gray-100 rounded-3xl w-1/2"></div>
-                    <div className="h-12 bg-gray-50 rounded-2xl w-full"></div>
-                    <div className="h-96 bg-gray-50 rounded-[2.5rem]"></div>
-               </div>
-          );
+          return <Loader className="min-h-[60vh]" size="large" />;
      }
 
      const tabs = ["Basic Details", "Orders List", "Financials"];
@@ -68,8 +63,8 @@ export default function CustomerDetailPage() {
                          <MdArrowBack size={20} />
                     </Link>
                     <AdminPageHeader
-                         title={data.profile.name}
-                         description={`Patron ID: ${id.slice(-8).toUpperCase()} • Joined ${new Date(data.profile.createdAt).toLocaleDateString()}`}
+                         title={data.profile?.name || "Customer"}
+                         description={`Patron ID: ${id.slice(-8).toUpperCase()} • Joined ${data.profile?.createdAt ? new Date(data.profile.createdAt).toLocaleDateString() : 'N/A'}`}
                     />
                </div>
 
@@ -90,10 +85,10 @@ export default function CustomerDetailPage() {
                                    </div>
 
                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <DetailItem icon={MdPerson} label="Full Legal Name" value={data.profile.name} />
-                                        <DetailItem icon={MdMail} label="Verified Email Address" value={data.profile.email} />
-                                        <DetailItem icon={MdPhone} label="Contact Telephony" value={data.profile.phone || "Not Provided"} />
-                                        <DetailItem icon={MdLocationOn} label="Standard Shipping Address" value={data.profile.address || "No primary address recorded"} isFullWidth />
+                                        <DetailItem icon={MdPerson} label="Full Legal Name" value={data.profile?.name || "N/A"} />
+                                        <DetailItem icon={MdMail} label="Verified Email Address" value={data.profile?.email || "N/A"} />
+                                        <DetailItem icon={MdPhone} label="Contact Telephony" value={data.profile?.phone || "Not Provided"} />
+                                        <DetailItem icon={MdLocationOn} label="Standard Shipping Address" value={data.profile?.address || "No primary address recorded"} isFullWidth />
                                    </div>
                               </AdminCard>
 
@@ -112,7 +107,7 @@ export default function CustomerDetailPage() {
                                              <div className="mt-8">
                                                   <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest leading-none">Lifetime Valuation</p>
                                                   <p className="text-4xl font-light mt-2 tracking-tighter">
-                                                       {settings.currency.symbol}{data.stats.totalSpent.toFixed(2)}
+                                                       {settings.currency.symbol}{(data.stats?.totalSpent || 0).toFixed(2)}
                                                   </p>
                                              </div>
                                         </div>
@@ -137,11 +132,11 @@ export default function CustomerDetailPage() {
                               ]}
                               emptyMessage="This patron has not initiated any transactions."
                          >
-                              {data.orders.map((order) => (
+                              {data.orders?.map((order) => (
                                    <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
                                         <td className="px-8 py-6 font-mono text-xs text-gray-800">{order._id.slice(-8).toUpperCase()}</td>
                                         <td className="px-8 py-6 text-xs text-gray-400 font-light">{new Date(order.createdAt).toLocaleDateString()}</td>
-                                        <td className="px-8 py-6 font-light">{settings.currency.symbol}{order.totalAmount.toFixed(2)}</td>
+                                        <td className="px-8 py-6 font-light">{settings.currency.symbol}{(order.totalAmount || 0).toFixed(2)}</td>
                                         <td className="px-8 py-6">
                                              <AdminStatusBadge status={order.status} />
                                         </td>
@@ -171,25 +166,25 @@ export default function CustomerDetailPage() {
                                         icon={MdAccountBalanceWallet}
                                         color="bg-bg-color text-primary"
                                         label="Gross Valuation"
-                                        value={`${settings.currency.symbol}${data.stats.totalSpent.toFixed(2)}`}
+                                        value={`${settings.currency.symbol}${(data.stats?.totalSpent || 0).toFixed(2)}`}
                                    />
                                    <FinancialBox
                                         icon={MdCheckCircle}
                                         color="bg-emerald-50 text-emerald-600"
                                         label="Completed Flows"
-                                        value={data.stats.successfulOrders}
+                                        value={data.stats?.successfulOrders || 0}
                                    />
                                    <FinancialBox
                                         icon={MdSchedule}
                                         color="bg-orange-50 text-orange-600"
                                         label="Active Requests"
-                                        value={data.stats.pendingOrders}
+                                        value={data.stats?.pendingOrders || 0}
                                    />
                                    <FinancialBox
                                         icon={MdHistory}
                                         color="bg-bg-color text-primary"
                                         label="Order Velocity"
-                                        value={`${data.stats.totalOrders} Tot`}
+                                        value={`${data.stats?.totalOrders || 0} Tot`}
                                    />
                               </div>
 

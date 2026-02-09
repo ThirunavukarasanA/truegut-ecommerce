@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MdInventory2 } from "react-icons/md";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import AdminSearch from "@/components/admin/common/AdminSearch";
 import AdminTable from "@/components/admin/common/AdminTable";
@@ -82,7 +82,7 @@ export default function VariantCatalogPage() {
                               <td className="px-8 py-5 text-right">
                                    <button
                                         onClick={() => router.push(`/admin/catalog/variants/${product._id}`)}
-                                        className="px-5 py-2.5 bg-gray-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-all shadow-lg shadow-gray-200"
+                                        className="px-5 py-2.5 bg-primary text-white text-[10px] font-bold uppercase tracking-widest rounded-xl hover:bg-secondary active:scale-[0.98] duration-200 transition-all shadow-lg shadow-gray-200"
                                    >
                                         Manage Variants
                                    </button>

@@ -2,7 +2,7 @@
 
 import { MdAdd } from "react-icons/md";
 
-export default function AdminPageHeader({ title, description, primaryAction, secondaryAction }) {
+export default function AdminPageHeader({ title, description, primaryAction, secondaryAction, children }) {
      return (
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                <div>
@@ -10,6 +10,7 @@ export default function AdminPageHeader({ title, description, primaryAction, sec
                     {description && <p className="text-gray-400 font-light text-sm mt-1">{description}</p>}
                </div>
                <div className="flex items-center gap-3">
+                    {children}
                     {secondaryAction && (
                          <button
                               onClick={secondaryAction.onClick}

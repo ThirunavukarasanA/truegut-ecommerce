@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import StoreSettings from '@/models/StoreSettings';
-import { getAuthenticatedUser } from '@/lib/api-auth';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function GET() {
      const user = await getAuthenticatedUser();

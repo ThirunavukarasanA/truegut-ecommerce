@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import {
      MdTrendingUp,
      MdPeople,
@@ -190,8 +190,8 @@ export default function DashboardPage() {
                                                   <div>
                                                        <p className="text-xs font-bold text-gray-900 leading-tight mb-1">{order.customer?.name || "Guest Check-out"}</p>
                                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' :
-                                                                 order.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
-                                                                      'bg-blue-50 text-blue-600'
+                                                            order.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
+                                                                 'bg-blue-50 text-blue-600'
                                                             }`}>
                                                             {order.status}
                                                        </span>

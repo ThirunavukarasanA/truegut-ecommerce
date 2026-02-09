@@ -17,10 +17,14 @@ import { useAuth } from "@/context/AuthContext";
 import RestockModal from "@/components/Product/RestockModal";
 import { toast } from "react-hot-toast"; // Changed to react-hot-toast as sonner is not in package.json
 import { MdNotificationsActive } from "react-icons/md";
+import { useLocation } from "@/context/LocationContext";
+import { useRouter } from "next/navigation";
 
 export default function ViewOneCollection() {
   const { slug } = useParams();
   const { addToCart } = useCart();
+  const router = useRouter();
+  const { vendorId, pincode, postOffice } = useLocation();
   const [product, setProduct] = useState(null);
   const [activeImage, setActiveImage] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -39,7 +43,7 @@ export default function ViewOneCollection() {
     if (user) {
       setNotifyLoading(true);
       try {
-        const res = await fetch("/api/restock-requests", {
+        const res = await fetch("/api/restock-requests", { // Consolidated API
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -49,6 +53,9 @@ export default function ViewOneCollection() {
             name: user.name,
             email: user.email,
             phone: user.phone || null,
+            pincode,
+            postOffice,
+            vendorId
           }),
         });
         const data = await res.json();
@@ -72,7 +79,11 @@ export default function ViewOneCollection() {
     async function fetchProduct() {
       if (!slug) return;
       try {
-        const res = await fetch(`/api/products/${slug}`);
+        const url = new URL(`/api/products/${slug}`, window.location.origin);
+        if (vendorId) url.searchParams.set("vendor", vendorId);
+        if (pincode) url.searchParams.set("pincode", pincode);
+
+        const res = await fetch(url.toString());
         const data = await res.json();
 
         if (data.success) {
@@ -208,11 +219,10 @@ export default function ViewOneCollection() {
                   <button
                     key={idx}
                     onClick={() => setActiveImage(img)}
-                    className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 transition-all ${
-                      activeImage === img
-                        ? "border-primary"
-                        : "border-transparent hover:border-gray-200"
-                    }`}
+                    className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 transition-all ${activeImage === img
+                      ? "border-primary"
+                      : "border-transparent hover:border-gray-200"
+                      }`}
                   >
                     <Image
                       src={img}
@@ -235,16 +245,14 @@ export default function ViewOneCollection() {
             <div className="flex items-center gap-2 mb-6 text-sm">
               <span className="font-bold text-gray-700">Availability :</span>
               <span
-                className={`flex items-center gap-1 ${
-                  selectedVariant?.stock > 0 ? "text-green-500" : "text-red-500"
-                }`}
+                className={`flex items-center gap-1 ${selectedVariant?.stock > 0 ? "text-green-500" : "text-red-500"
+                  }`}
               >
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    selectedVariant?.stock > 0
-                      ? "bg-green-500 animate-pulse"
-                      : "bg-red-500"
-                  }`}
+                  className={`w-2 h-2 rounded-full ${selectedVariant?.stock > 0
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-red-500"
+                    }`}
                 ></span>
                 {selectedVariant?.stock > 0
                   ? `In Stock (${selectedVariant.stock})`
@@ -283,16 +291,14 @@ export default function ViewOneCollection() {
                       onClick={() => setSelectedVariant(variant)}
                       disabled={!variant.isActive} // or stock === 0 if you want to disable out of stock
                       className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors
-                            ${
-                              selectedVariant?._id === variant._id
-                                ? "border-primary text-primary bg-primary/5"
-                                : "border-gray-200 text-gray-600 hover:border-gray-300"
-                            }
-                            ${
-                              !variant.isActive
-                                ? "opacity-50 cursor-not-allowed bg-gray-50"
-                                : ""
-                            }
+                            ${selectedVariant?._id === variant._id
+                          ? "border-primary text-primary bg-primary/5"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        }
+                            ${!variant.isActive
+                          ? "opacity-50 cursor-not-allowed bg-gray-50"
+                          : ""
+                        }
                         `}
                     >
                       {variant.name}
@@ -345,7 +351,21 @@ export default function ViewOneCollection() {
                 >
                   Add to Cart
                 </button>
-                <button className="flex-1 bg-[#e05d25] text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-[#c94e1b] transition-transform active:scale-95 shadow-md">
+                <button
+                  onClick={() => {
+                    if (!selectedVariant) return;
+                    addToCart({
+                      ...product,
+                      id: product._id,
+                      variantId: selectedVariant._id,
+                      variantName: selectedVariant.name,
+                      price: selectedVariant.price,
+                      quantity: quantity,
+                    });
+                    router.push('/checkout');
+                  }}
+                  className="flex-1 bg-[#e05d25] text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-[#c94e1b] transition-transform active:scale-95 shadow-md flex items-center justify-center"
+                >
                   Buy it Now
                 </button>
               </div>
@@ -357,10 +377,10 @@ export default function ViewOneCollection() {
                   className="w-full bg-amber-500 text-white font-bold py-4 rounded-lg uppercase tracking-wider hover:bg-amber-600 transition-colors shadow-md flex items-center justify-center gap-2"
                 >
                   <MdNotificationsActive size={20} />
-                  {notifyLoading ? "Processing..." : "Notify Me When Available"}
+                  {notifyLoading ? "Processing..." : "STOCK REQUEST"}
                 </button>
                 <p className="text-center text-sm text-gray-500">
-                  We'll email you when this size is back in stock.
+                  We'll notify you via email/phone once stock is available.
                 </p>
               </div>
             )}
@@ -378,11 +398,10 @@ export default function ViewOneCollection() {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab.toLowerCase())}
-                    className={`pb-4 text-lg font-bold uppercase tracking-wide transition-colors relative ${
-                      activeTab === tab.toLowerCase()
-                        ? "text-gray-800"
-                        : "text-gray-400 hover:text-gray-600"
-                    }`}
+                    className={`pb-4 text-lg font-bold uppercase tracking-wide transition-colors relative ${activeTab === tab.toLowerCase()
+                      ? "text-gray-800"
+                      : "text-gray-400 hover:text-gray-600"
+                      }`}
                   >
                     {tab}
                     {activeTab === tab.toLowerCase() && (
@@ -398,9 +417,10 @@ export default function ViewOneCollection() {
           <style jsx global>{`
             .rich-text-content {
               word-break: break-word;
-              overflow-wrap: break-word; /* standard */
-              overflow-wrap: anywhere; /* forces break at soft hyphens/nbsp if needed */
+              overflow-wrap: break-word;
+              overflow-wrap: anywhere;
               max-width: 100%;
+              counter-reset: item; /* Initialize counter */
             }
             .rich-text-content h1,
             .rich-text-content h2,
@@ -416,15 +436,35 @@ export default function ViewOneCollection() {
               line-height: 1.75;
               overflow-wrap: break-word;
             }
+            /* Reset counter for nested lists (targets OL inside LI) */
+            .rich-text-content li ol {
+              counter-reset: item;
+            }
             .rich-text-content ul {
               list-style-type: disc;
               padding-left: 1.5rem;
               margin-bottom: 1rem;
             }
+            .rich-text-content ul li {
+              margin-bottom: 0.5rem;
+            }
             .rich-text-content ol {
-              list-style-type: decimal;
-              padding-left: 1.5rem;
+              list-style-type: none; /* Turn off default numbering */
+              padding-left: 0;
               margin-bottom: 1rem;
+            }
+            .rich-text-content ol > li {
+              counter-increment: item;
+              position: relative;
+              padding-left: 1.5rem; /* Space for number */
+              margin-bottom: 0.25rem;
+            }
+            .rich-text-content ol > li::before {
+              content: counter(item) ".";
+              position: absolute;
+              left: 0;
+              font-weight: bold;
+              color: #1f2937;
             }
             .rich-text-content strong {
               font-weight: 700;
@@ -450,11 +490,11 @@ export default function ViewOneCollection() {
           <div className="max-w-4xl mx-auto min-h-[200px]">
             {activeTab === "description" && (
               <div className="animate-fadeIn">
-                <h4 className="text-lg font-bold text-gray-800 mb-6">
+                <h4 className="text-lg font-bold text-gray-800 mb-6 underline underline-offset-4 decoration-2 decoration-secondary">
                   Description
                 </h4>
                 <div
-                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  className="text-gray-600 leading-relaxed tracking-wide rich-text-content wrap-break-word w-full"
                   dangerouslySetInnerHTML={{
                     __html:
                       product.detailedDescription || product.description || "",
@@ -478,11 +518,11 @@ export default function ViewOneCollection() {
 
             {activeTab === "nutrition" && (
               <div className="animate-fadeIn">
-                <h4 className="text-lg font-bold text-gray-800 mb-6">
+                <h4 className="text-lg font-bold text-gray-800 mb-6 underline underline-offset-4 decoration-2 decoration-secondary">
                   Nutrition & Ingredients Information
                 </h4>
                 <div
-                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  className="text-gray-600 leading-relaxed tracking-wide rich-text-content wrap-break-word w-full"
                   dangerouslySetInnerHTML={{
                     __html:
                       product.nutrition ||
@@ -494,11 +534,11 @@ export default function ViewOneCollection() {
 
             {activeTab === "history" && (
               <div className="animate-fadeIn">
-                <h4 className="text-lg font-bold text-gray-800 mb-6">
+                <h4 className="text-lg font-bold text-gray-800 mb-6 underline underline-offset-4 decoration-2 decoration-secondary">
                   Product History
                 </h4>
                 <div
-                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  className="text-gray-600 leading-relaxed tracking-wide rich-text-content wrap-break-word w-full"
                   dangerouslySetInnerHTML={{
                     __html:
                       product.history ||
@@ -510,11 +550,11 @@ export default function ViewOneCollection() {
 
             {activeTab === "microbial profile" && (
               <div className="animate-fadeIn">
-                <h4 className="text-lg font-bold text-gray-800 mb-6">
+                <h4 className="text-lg font-bold text-gray-800 mb-6 underline underline-offset-4 decoration-2 decoration-secondary">
                   Microbial Profile
                 </h4>
                 <div
-                  className="text-gray-600 leading-relaxed rich-text-content wrap-break-word w-full"
+                  className="text-gray-600 leading-relaxed tracking-wide rich-text-content wrap-break-word w-full"
                   dangerouslySetInnerHTML={{
                     __html:
                       product.microbialProfile ||

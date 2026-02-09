@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import ProductForm from "@/components/admin/catalog/ProductForm";
 import toast from "react-hot-toast";
@@ -44,15 +44,15 @@ export default function CreateProductPage() {
     if (!formDataToSubmit) return;
     const toastId = toast.loading("Creating product...");
     try {
-      const res = await fetch("/api/admin/catalog/products", {
+      // adminFetch handles FormData correctly now (if updated)
+      const data = await adminFetch("/api/admin/catalog/products", {
         method: "POST",
         body: formDataToSubmit,
       });
-      const data = await res.json();
 
       if (data.success) {
         toast.success("Product created successfully", { id: toastId });
-        router.push(`/admin/catalog/products/${data.data._id}`);
+        router.push(`/admin/catalog/products`);
       } else {
         toast.error(data.error || "Failed to create product", { id: toastId });
       }
@@ -97,6 +97,7 @@ export default function CreateProductPage() {
         title="Confirm Creation"
         message="Are you ready to create this product? You can add variants in the next step."
         action="create"
+        type='info'
       />
     </div>
   );

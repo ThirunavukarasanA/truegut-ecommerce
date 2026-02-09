@@ -1,6 +1,6 @@
 import { SignJWT } from 'jose';
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Customer from '@/models/Customer';
 import Cart from '@/models/Cart';
 import TempCart from '@/models/TempCart';

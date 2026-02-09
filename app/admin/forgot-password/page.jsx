@@ -28,7 +28,7 @@ export default function ForgotPassword() {
                     toast.success(data.message, { id: toastId });
                     // DEV/DEBUG: In this environment, we show token for ease of use
                     if (data.debugToken) {
-                         console.log("DEBUG: Reset Token is:", data.debugToken);
+                         ("DEBUG: Reset Token is:", data.debugToken);
                          toast.success("Debug: Token logged to console", { duration: 10000 });
                     }
                } else {

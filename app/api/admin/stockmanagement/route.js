@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
+import dbConnect from "@/lib/admin/db";
 import Batch from "@/models/Batch";
+import VendorStock from "@/models/VendorStock";
 import Product from "@/models/Product"; // For population
 import Variant from "@/models/Variant"; // For population
-import { getAuthenticatedUser } from "@/lib/api-auth";
+import { getAuthenticatedUser } from "@/lib/admin/api-auth";
 
 export async function GET(req) {
      try {
@@ -17,6 +18,9 @@ export async function GET(req) {
 
           const { searchParams } = new URL(req.url);
           const search = searchParams.get("search");
+          const page = parseInt(searchParams.get('page')) || 1;
+          const limit = parseInt(searchParams.get('limit')) || 20;
+          const skip = (page - 1) * limit;
 
           let query = {};
           if (search) {
@@ -38,12 +42,105 @@ export async function GET(req) {
                { $set: { status: 'expired' } }
           );
 
-          const batches = await Batch.find(query)
-               .populate('product', 'name')
-               .populate('variant', 'name')
-               .sort({ createdAt: -1 });
+          // Calculate Stats (Aggregation)
+          const statsAggregation = await Batch.aggregate([
+               {
+                    $lookup: {
+                         from: 'vendorstocks',
+                         localField: '_id',
+                         foreignField: 'batch',
+                         as: 'allocatedStock'
+                    }
+               },
+               {
+                    $addFields: {
+                         allocatedQuantity: { $sum: "$allocatedStock.quantity" }
+                    }
+               },
+               {
+                    $group: {
+                         _id: null,
+                         totalPhysical: {
+                              $sum: { $cond: [{ $eq: ["$status", "active"] }, "$quantity", 0] }
+                         },
+                         totalAllocated: {
+                              $sum: { $cond: [{ $eq: ["$status", "active"] }, "$allocatedQuantity", 0] }
+                         },
+                         expiredStock: {
+                              $sum: { $cond: [{ $eq: ["$status", "expired"] }, "$quantity", 0] }
+                         },
+                         expiredBatchesCount: {
+                              $sum: { $cond: [{ $eq: ["$status", "expired"] }, 1, 0] }
+                         },
+                         lowStockBatches: {
+                              $sum: {
+                                   $cond: [
+                                        { $and: [{ $eq: ["$status", "active"] }, { $lt: ["$quantity", 10] }] },
+                                        1,
+                                        0
+                                   ]
+                              }
+                         }
+                    }
+               }
+          ]);
 
-          return NextResponse.json({ success: true, data: batches });
+          const statsRaw = statsAggregation[0] || {
+               totalPhysical: 0,
+               totalAllocated: 0,
+               expiredStock: 0,
+               expiredBatchesCount: 0,
+               lowStockBatches: 0
+          };
+
+          const stats = {
+               ...statsRaw,
+               totalStock: statsRaw.totalPhysical + statsRaw.totalAllocated
+          };
+
+          // Main data aggregation with join
+          const aggregateQuery = [
+               { $match: query },
+               {
+                    $lookup: {
+                         from: 'vendorstocks',
+                         localField: '_id',
+                         foreignField: 'batch',
+                         as: 'vendorAssignments'
+                    }
+               },
+               {
+                    $addFields: {
+                         allocatedQuantity: { $sum: "$vendorAssignments.quantity" }
+                    }
+               },
+               { $sort: { createdAt: -1 } },
+               { $skip: skip },
+               { $limit: limit }
+          ];
+
+          const [batchesRaw, total] = await Promise.all([
+               Batch.aggregate(aggregateQuery),
+               Batch.countDocuments(query)
+          ]);
+
+          // Manually populate results from aggregate
+          const batches = await Batch.populate(batchesRaw, [
+               { path: 'product', select: 'name' },
+               { path: 'variant', select: 'name' }
+          ]);
+
+          return NextResponse.json({
+               success: true,
+               data: batches,
+               pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total,
+                    limit
+               },
+               stats
+          });
      } catch (error) {
           console.error("Stock API Error:", error);
           return NextResponse.json({ success: false, error: "Failed to fetch stock" }, { status: 500 });
@@ -105,19 +202,23 @@ export async function PUT(req) {
                return NextResponse.json({ success: false, error: "Batch ID and Quantity are required" }, { status: 400 });
           }
 
-          const batch = await Batch.findById(batchId);
-          if (!batch) {
+          const batchToCheck = await Batch.findById(batchId);
+          if (!batchToCheck) {
                return NextResponse.json({ success: false, error: "Batch not found" }, { status: 404 });
           }
 
-          if (batch.status === 'expired') {
+          if (batchToCheck.status === 'expired') {
                return NextResponse.json({ success: false, error: "Cannot add stock to expired batch" }, { status: 400 });
           }
 
-          batch.quantity += parseInt(quantity);
-          await batch.save();
+          // Atomic update using $inc
+          const updatedBatch = await Batch.findByIdAndUpdate(
+               batchId,
+               { $inc: { quantity: parseInt(quantity) } },
+               { new: true }
+          ).populate('product', 'name').populate('variant', 'name');
 
-          return NextResponse.json({ success: true, data: batch });
+          return NextResponse.json({ success: true, data: updatedBatch });
      } catch (error) {
           console.error("Stock Update Error:", error);
           return NextResponse.json({ success: false, error: error.message }, { status: 500 });

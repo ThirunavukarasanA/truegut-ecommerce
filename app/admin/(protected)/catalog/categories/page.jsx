@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import { MdAdd, MdDelete, MdEdit, MdInfoOutline } from "react-icons/md";
 import toast from "react-hot-toast";
 import CategoryModal from "./CategoryModal";
@@ -146,7 +146,7 @@ export default function CategoriesPage() {
                                         <div className="text-[11px] font-light text-gray-400 line-clamp-1 mt-1">{cat.description || "No description provided"}</div>
                                    </div>
                               </td>
-                              <td className="px-8 py-6">
+                              <td className="px-8 py-6 w-1/4">
                                    <span className="text-[10px] font-mono bg-bg-color text-primary px-3 py-1.5 rounded-lg border border-gray-100 uppercase tracking-wider">
                                         {cat.slug}
                                    </span>
@@ -179,6 +179,7 @@ export default function CategoriesPage() {
                {/* Category Modal Component */}
                <CategoryModal
                     isOpen={isModalOpen}
+                    setIsModalOpen={setIsModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     editMode={editMode}
                     category={selectedCategory}

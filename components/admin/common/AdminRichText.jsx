@@ -36,7 +36,6 @@ export default function AdminRichText({
     "underline",
     "strike",
     "list",
-    "bullet",
     "link",
   ];
 
@@ -59,11 +58,10 @@ export default function AdminRichText({
       <div
         className={`
                 relative rounded-2xl overflow-hidden bg-gray-50 border transition-all
-                ${
-                  error
-                    ? "border-red-300 ring-4 ring-red-50/50"
-                    : "border-gray-100 focus-within:bg-white focus-within:border-primary/20 focus-within:ring-4 focus-within:ring-primary/5"
-                }
+                ${error
+            ? "border-red-300 ring-4 ring-red-50/50"
+            : "border-gray-100 focus-within:bg-white focus-within:border-primary/20 focus-within:ring-4 focus-within:ring-primary/5"
+          }
             `}
       >
         <style jsx global>{`

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
-import { getAuthenticatedUser } from '@/lib/api-auth';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
+import mongoose from 'mongoose';
 
 // Admin: Get all orders with advanced filtering
 export async function GET(req) {
@@ -10,16 +11,29 @@ export async function GET(req) {
      if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
+     mongoose.set('strictPopulate', false);
+
      try {
           const { searchParams } = new URL(req.url);
+          const orderId = searchParams.get('orderId');
           const status = searchParams.get('status');
           const search = searchParams.get('search');
           const paymentStatus = searchParams.get('paymentStatus');
           const startDate = searchParams.get('startDate');
           const endDate = searchParams.get('endDate');
           const vendor = searchParams.get('vendor');
+          const page = parseInt(searchParams.get('page')) || 1;
+          const limit = parseInt(searchParams.get('limit')) || 20;
+          const skip = (page - 1) * limit;
 
           let query = {};
+
+          if (orderId) {
+               if (!mongoose.Types.ObjectId.isValid(orderId)) {
+                    return NextResponse.json({ success: false, error: 'Invalid Order ID format' }, { status: 400 });
+               }
+               query._id = orderId;
+          }
 
           if (status && status !== 'All') {
                query.status = status;
@@ -50,13 +64,27 @@ export async function GET(req) {
                if (endDate) query.createdAt.$lte = new Date(endDate);
           }
 
-          const orders = await Order.find(query)
-               .populate('items.product', 'name images category')
-               .populate('items.variant', 'name sku')
-               .populate('vendor', 'name email phone')
-               .sort('-createdAt');
+          const [orders, total] = await Promise.all([
+               Order.find(query)
+                    .populate('items.product', 'name images category')
+                    .populate('items.variant', 'name sku')
+                    .populate('vendor', 'name email phone')
+                    .sort('-createdAt')
+                    .skip(skip)
+                    .limit(limit),
+               Order.countDocuments(query)
+          ]);
 
-          return NextResponse.json({ success: true, data: orders });
+          return NextResponse.json({
+               success: true,
+               data: orders,
+               pagination: {
+                    current: page,
+                    pages: Math.ceil(total / limit),
+                    total,
+                    limit
+               }
+          });
      } catch (error) {
           return NextResponse.json({ success: false, error: error.message }, { status: 500 });
      }
@@ -68,6 +96,9 @@ export async function POST(req) {
      if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
+     const session = await mongoose.startSession();
+     session.startTransaction();
+
      try {
           // Import models dynamically if needed
           const { default: Batch } = await import('@/models/Batch');
@@ -96,17 +127,14 @@ export async function POST(req) {
 
           for (const item of body.items) {
                if (!item.variant) {
-                    return NextResponse.json({ success: false, error: 'Item variant is required' }, { status: 400 });
+                    throw new Error('Item variant is required');
                }
 
-               const variant = await Variant.findById(item.variant).populate('product');
+               const variant = await Variant.findById(item.variant).populate('product').session(session);
                if (!variant || !variant.product) {
-                    return NextResponse.json({ success: false, error: `Variant/Product not found` }, { status: 400 });
+                    throw new Error(`Variant/Product not found`);
                }
                const product = variant.product;
-
-               // Admin override: Assuming admin implies checking availability but allowing force?
-               // Let's stick to standard logic for now to ensure data integrity with batches.
 
                // 1. Check Total Stock
                const batches = await Batch.find({
@@ -114,15 +142,12 @@ export async function POST(req) {
                     status: 'active',
                     expiryDate: { $gt: new Date() },
                     quantity: { $gt: 0 }
-               }).sort({ expiryDate: 1 });
+               }).sort({ expiryDate: 1 }).session(session);
 
                const totalAvailable = batches.reduce((sum, b) => sum + b.quantity, 0);
 
                if (totalAvailable < item.quantity) {
-                    return NextResponse.json({
-                         success: false,
-                         error: `Insufficient stock for ${product.name} - ${variant.name}. Available: ${totalAvailable}`
-                    }, { status: 400 });
+                    throw new Error(`Insufficient stock for ${product.name} - ${variant.name}. Available: ${totalAvailable}`);
                }
 
                // 2. Deduct Stock
@@ -132,10 +157,12 @@ export async function POST(req) {
                for (const batch of batches) {
                     if (remainingToDeduct <= 0) break;
                     const take = Math.min(batch.quantity, remainingToDeduct);
+
+                    // Atomic update for each batch within the transaction
                     batch.quantity -= take;
                     remainingToDeduct -= take;
                     usedBatches.push({ batch: batch._id, quantity: take });
-                    await batch.save();
+                    await batch.save({ session });
                }
 
                // Create product snapshot
@@ -169,20 +196,27 @@ export async function POST(req) {
                totalAmount: body.totalAmount
           };
 
-          const order = await Order.create(orderData);
+          const [order] = await Order.create([orderData], { session });
 
-          // Populate the created order before returning
-          await order.populate([
+          // Commit transaction
+          await session.commitTransaction();
+          session.endSession();
+
+          // Populate the created order before returning (outside session is fine, or separate query)
+          await Order.populate(order, [
                { path: 'items.product', select: 'name images' },
                { path: 'items.variant', select: 'name sku' }
           ]);
 
           return NextResponse.json({
                success: true,
-               data: order,
+               data: order[0], // Order is an array when created via 'create([data], {session})'
                message: 'Order created successfully'
           }, { status: 201 });
+
      } catch (error) {
+          await session.abortTransaction();
+          session.endSession();
           return NextResponse.json({ success: false, error: error.message }, { status: 400 });
      }
 }
@@ -198,10 +232,10 @@ export async function PATCH(req) {
           const orderId = searchParams.get('orderId');
           const body = await req.json();
 
-          if (!orderId) {
+          if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
                return NextResponse.json({
                     success: false,
-                    error: 'Order ID is required'
+                    error: 'Valid Order ID is required'
                }, { status: 400 });
           }
 
@@ -261,59 +295,98 @@ export async function DELETE(req) {
      if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
+     const session = await mongoose.startSession();
+     session.startTransaction();
+
      try {
           const { searchParams } = new URL(req.url);
           const orderId = searchParams.get('orderId');
           const { default: Batch } = await import('@/models/Batch');
 
-          if (!orderId) {
+          if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
                return NextResponse.json({
                     success: false,
-                    error: 'Order ID is required'
+                    error: 'Valid Order ID is required'
                }, { status: 400 });
           }
 
-          const order = await Order.findById(orderId);
+          const order = await Order.findById(orderId).session(session);
 
           if (!order) {
-               return NextResponse.json({
-                    success: false,
-                    error: 'Order not found'
-               }, { status: 404 });
+               throw new Error('Order not found');
           }
+
 
           // Restore stock if order was not already cancelled
           if (order.status !== 'Cancelled') {
+               const { default: VendorStock } = await import('@/models/VendorStock');
+
                for (const item of order.items) {
                     if (item.batches && item.batches.length > 0) {
                          for (const batchRecord of item.batches) {
-                              await Batch.findByIdAndUpdate(batchRecord.batch, {
-                                   $inc: { quantity: batchRecord.quantity }
-                              });
+                              if (order.vendor) {
+                                   // Restore to Vendor Stock
+                                   const vStock = await VendorStock.findOne({
+                                        vendor: order.vendor,
+                                        batch: batchRecord.batch
+                                   }).session(session);
+
+                                   if (vStock) {
+                                        vStock.quantity += batchRecord.quantity;
+                                        await vStock.save({ session });
+                                   } else {
+                                        // Fallback to Warehouse if VM entry missing
+                                        await Batch.findByIdAndUpdate(batchRecord.batch, {
+                                             $inc: { quantity: batchRecord.quantity }
+                                        }, { session });
+                                   }
+                              } else {
+                                   // Warehouse Restore
+                                   await Batch.findByIdAndUpdate(batchRecord.batch, {
+                                        $inc: { quantity: batchRecord.quantity }
+                                   }, { session });
+                              }
                          }
                     } else if (item.variant) {
                          // Fallback logic
-                         const latestBatch = await Batch.findOne({
-                              variant: item.variant,
-                              status: 'active'
-                         }).sort({ expiryDate: -1 });
+                         if (order.vendor) {
+                              const latestVStock = await VendorStock.findOne({
+                                   vendor: order.vendor,
+                                   variant: item.variant
+                              }).sort({ receivedAt: -1 }).session(session);
 
-                         if (latestBatch) {
-                              latestBatch.quantity += item.quantity;
-                              await latestBatch.save();
+                              if (latestVStock) {
+                                   latestVStock.quantity += item.quantity;
+                                   await latestVStock.save({ session });
+                              } // If no vstock, ignore or fallback? Safe to ignore for untracked legacy.
+                         } else {
+                              const latestBatch = await Batch.findOne({
+                                   variant: item.variant,
+                                   status: 'active'
+                              }).sort({ expiryDate: -1 }).session(session);
+
+                              if (latestBatch) {
+                                   latestBatch.quantity += item.quantity;
+                                   await latestBatch.save({ session });
+                              }
                          }
                     }
                }
           }
 
           order.status = 'Cancelled';
-          await order.save();
+          await order.save({ session });
+
+          await session.commitTransaction();
+          session.endSession();
 
           return NextResponse.json({
                success: true,
                message: 'Order cancelled successfully'
           });
      } catch (error) {
+          await session.abortTransaction();
+          session.endSession();
           return NextResponse.json({ success: false, error: error.message }, { status: 500 });
      }
 }

@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Variant from '@/models/Variant';
 // Dynamic imports for reference checks to avoid circular dependency issues if any, though less likely here
 import Batch from '@/models/Batch';
-import Order from '@/models/Order';
-import { getAuthenticatedUser } from '@/lib/api-auth';
+import Product from "@/models/Product";
+import VendorStock from "@/models/VendorStock";
+import RestockRequest from "@/models/RestockRequest";
+import Cart from "@/models/Cart";
+import TempCart from "@/models/TempCart";
+import Order from "@/models/Order";
+import { getAuthenticatedUser } from "@/lib/admin/api-auth";
 
 export async function PATCH(req, { params }) {
      const user = await getAuthenticatedUser();
@@ -20,7 +25,33 @@ export async function PATCH(req, { params }) {
      try {
           const body = await req.json();
 
-          // If updating SKU, check uniqueness
+
+          // If name is updated, check if we need to regenerate SKU
+          if (body.name) {
+               const currentVariant = await Variant.findById(id);
+               if (currentVariant && currentVariant.name !== body.name) {
+                    const product = await Product.findById(currentVariant.product);
+                    if (product) {
+                         const cleanName = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                         const pSlug = cleanName(product.name).substring(0, 3).toUpperCase();
+                         const vSlug = cleanName(body.name).substring(0, 3).toUpperCase();
+
+                         let baseSku = `${pSlug}-${vSlug}-`.toUpperCase();
+                         let counter = 1;
+                         let newSku = `${baseSku}001`;
+
+                         // Ensure uniqueness
+                         while (await Variant.findOne({ sku: newSku, _id: { $ne: id } })) {
+                              counter++;
+                              const suffix = counter.toString().padStart(3, '0');
+                              newSku = `${baseSku}${suffix}`;
+                         }
+                         body.sku = newSku;
+                    }
+               }
+          }
+
+          // If manually updating SKU (override), check uniqueness
           if (body.sku) {
                const skuExists = await Variant.findOne({ sku: body.sku, _id: { $ne: id } });
                if (skuExists) {
@@ -50,16 +81,20 @@ export async function DELETE(req, { params }) {
      await dbConnect();
 
      try {
-          // Check for dependencies
-          const batchCount = await Batch.countDocuments({ variant: id });
-          if (batchCount > 0) {
-               return NextResponse.json({ success: false, error: 'Cannot delete variant: Associated batches exist.' }, { status: 400 });
-          }
-
+          // Check for dependencies that block deletion (e.g., existing orders)
           const orderCount = await Order.countDocuments({ 'items.variant': id });
           if (orderCount > 0) {
-               return NextResponse.json({ success: false, error: 'Cannot delete variant: Associated orders exist.' }, { status: 400 });
+               return NextResponse.json({ success: false, error: 'Cannot delete variant: Associated orders exist. Please remove variant from orders first.' }, { status: 400 });
           }
+
+          // Cascade delete dependencies (cleanup related documents)
+          await Promise.all([
+               Batch.deleteMany({ variant: id }),
+               VendorStock.deleteMany({ variant: id }),
+               RestockRequest.deleteMany({ variant: id }),
+               Cart.updateMany({}, { $pull: { items: { variantId: id } } }),
+               TempCart.updateMany({}, { $pull: { items: { variantId: id } } })
+          ]);
 
           const variant = await Variant.findByIdAndDelete(id);
           if (!variant) {

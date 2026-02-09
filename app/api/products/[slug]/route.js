@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import mongoose from 'mongoose';
+import dbConnect from '@/lib/admin/db';
 import Product from '@/models/Product';
 import Variant from '@/models/Variant';
 import Batch from '@/models/Batch';
@@ -23,15 +24,36 @@ export async function GET(req, { params }) {
           const variants = await Variant.find({ product: product._id, isActive: true });
 
           // Fetch stock for each variant
-          const variantsWithStock = await Promise.all(variants.map(async (variant) => {
-               const batches = await Batch.find({
-                    variant: variant._id,
-                    status: 'active',
-                    expiryDate: { $gt: new Date() },
-                    quantity: { $gt: 0 }
-               });
+          const { searchParams } = new URL(req.url);
+          const vendorId = searchParams.get('vendor');
+          const pincode = searchParams.get('pincode');
+          const { default: VendorStock } = await import('@/models/VendorStock');
 
-               const totalStock = batches.reduce((sum, b) => sum + b.quantity, 0);
+          const variantsWithStock = await Promise.all(variants.map(async (variant) => {
+               let totalStock = 0;
+
+               if (vendorId && mongoose.Types.ObjectId.isValid(vendorId)) {
+                    // Case 1: Serviceable Pincode (Vendor Mapped)
+                    const vendorStocks = await VendorStock.find({
+                         vendor: vendorId,
+                         variant: variant._id
+                    });
+                    totalStock = vendorStocks.reduce((sum, s) => sum + s.quantity, 0);
+               } else if (pincode) {
+                    // Case 2: Non-Serviceable Pincode (Not in DB)
+                    // Explicitly return 0 stock to trigger STOCK REQUEST
+                    totalStock = 0;
+               } else {
+                    // Case 3: No location context (SEO/Initial)
+                    // Fallback to global batches
+                    const batches = await Batch.find({
+                         variant: variant._id,
+                         status: 'active',
+                         expiryDate: { $gt: new Date() },
+                         quantity: { $gt: 0 }
+                    });
+                    totalStock = batches.reduce((sum, b) => sum + b.quantity, 0);
+               }
 
                return {
                     ...variant.toObject(),

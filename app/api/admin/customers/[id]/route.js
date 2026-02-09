@@ -1,13 +1,15 @@
+
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Customer from '@/models/Customer';
 import Order from '@/models/Order';
 
 export async function GET(req, { params }) {
      try {
-          const { id } = params;
-          await dbConnect();
+          // Fix: Await params before accessing properties (Next.js 15+ requirement)
+          const { id } = await params;
 
+          await dbConnect();
           const customer = await Customer.findById(id);
           if (!customer) {
                return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
@@ -18,7 +20,7 @@ export async function GET(req, { params }) {
                .populate('items.product', 'name images sku category')
                .sort({ createdAt: -1 });
 
-          // Calculate comprehensive stats
+          // Calculate comprehensive stats (with safe navigation)
           const stats = {
                totalOrders: orders.length,
                successfulOrders: orders.filter(o => o.status === 'Delivered').length,
@@ -26,10 +28,17 @@ export async function GET(req, { params }) {
                cancelledOrders: orders.filter(o => o.status === 'Cancelled').length,
                returnedOrders: orders.filter(o => o.status === 'Returns').length,
                totalSpent: orders.reduce((acc, curr) => curr.status !== 'Cancelled' ? acc + (curr.totalAmount || 0) : acc, 0),
-               averageOrderValue: orders.length > 0 ? orders.reduce((acc, curr) => curr.status !== 'Cancelled' ? acc + (curr.totalAmount || 0) : acc, 0) / orders.filter(o => o.status !== 'Cancelled').length : 0,
+               averageOrderValue: 0,
                lastOrderDate: orders[0]?.createdAt || null,
                firstOrderDate: orders[orders.length - 1]?.createdAt || null,
           };
+
+          if (orders.length > 0) {
+               const validOrdersCount = orders.filter(o => o.status !== 'Cancelled').length;
+               if (validOrdersCount > 0) {
+                    stats.averageOrderValue = stats.totalSpent / validOrdersCount;
+               }
+          }
 
           // Payment analytics
           const paymentAnalytics = {

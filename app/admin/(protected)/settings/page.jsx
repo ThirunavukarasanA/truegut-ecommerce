@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import {
   MdStore,
   MdEmail,
@@ -47,15 +48,20 @@ function SettingsContent() {
     fetchSettings();
   }, []);
 
+
+
+  // ... inside component
+
   const fetchSettings = async () => {
     try {
-      const res = await fetch("/api/admin/settings");
-      const data = await res.json();
+      const data = await adminFetch("/api/admin/settings");
       if (data.success) {
         setSettings(data.data);
       }
     } catch (error) {
-      toast.error("Failed to load settings");
+      if (error.message !== 'Unauthorized - Redirecting to login') {
+        toast.error("Failed to load settings");
+      }
     } finally {
       setLoading(false);
     }
@@ -65,12 +71,10 @@ function SettingsContent() {
     setSaving(true);
     const toastId = toast.loading("Saving configuration...");
     try {
-      const res = await fetch("/api/admin/settings", {
+      const data = await adminFetch("/api/admin/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-      const data = await res.json();
       if (data.success) {
         toast.success("Settings updated successfully", { id: toastId });
         reloadSettings();
@@ -78,7 +82,9 @@ function SettingsContent() {
         toast.error(data.error || "Save failed", { id: toastId });
       }
     } catch (error) {
-      toast.error("Network error", { id: toastId });
+      if (error.message !== 'Unauthorized - Redirecting to login') {
+        toast.error("Network error", { id: toastId });
+      }
     } finally {
       setSaving(false);
     }
@@ -96,15 +102,13 @@ function SettingsContent() {
     setChangingPassword(true);
     const toastId = toast.loading("Updating security credentials...");
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const data = await adminFetch("/api/auth/change-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           oldPassword: passwordForm.oldPassword,
           newPassword: passwordForm.newPassword,
         }),
       });
-      const data = await res.json();
       if (data.success) {
         toast.success("Password updated successfully", { id: toastId });
         setPasswordForm({
@@ -116,7 +120,9 @@ function SettingsContent() {
         toast.error(data.error || "Update failed", { id: toastId });
       }
     } catch (error) {
-      toast.error("Network error", { id: toastId });
+      if (error.message !== 'Unauthorized - Redirecting to login') {
+        toast.error("Network error", { id: toastId });
+      }
     } finally {
       setChangingPassword(false);
     }
@@ -142,11 +148,11 @@ function SettingsContent() {
         primaryAction={
           activeTab !== "Security"
             ? {
-                label: saving ? "Saving..." : "Save Configuration",
-                onClick: handleSave,
-                icon: MdSave,
-                disabled: saving,
-              }
+              label: saving ? "Saving..." : "Save Configuration",
+              onClick: handleSave,
+              icon: MdSave,
+              disabled: saving,
+            }
             : null
         }
       />

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Category from '@/models/Category';
-import { getAuthenticatedUser } from '@/lib/api-auth';
-import { generateSlug } from '@/lib/model-helpers';
+import Product from '@/models/Product';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
+import { generateSlug } from '@/lib/admin/model-helpers';
 
 export async function PATCH(req, { params }) {
      const user = await getAuthenticatedUser();
@@ -53,6 +54,9 @@ export async function DELETE(req, { params }) {
      await dbConnect();
 
      try {
+          // Remove category reference from products
+          await Product.updateMany({ category: id }, { $unset: { category: "" } });
+
           const category = await Category.findByIdAndDelete(id);
           if (!category) {
                return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });

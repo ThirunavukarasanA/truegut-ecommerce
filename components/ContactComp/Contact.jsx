@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   MdEmail,
@@ -11,12 +11,107 @@ import {
 import Navbar from "@/components/Home/Navbar";
 import MobileBottomNav from "@/components/Home/MobileBottomNav";
 import Footer from "@/components/Home/Footer";
+import toast from "react-hot-toast";
 
 export default function Contact() {
-  const handleSubmit = (e) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    else if (!/^[a-zA-Z\s]*$/.test(formData.name)) {
+      newErrors.name = "Only alphabets allowed";
+    }
+
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+
+    if (!formData.subject.trim()) newErrors.subject = "Subject is required";
+    else if (!/^[a-zA-Z0-9\s]*$/.test(formData.subject)) {
+      newErrors.subject = "Only alphanumeric allowed";
+    }
+
+    if (!formData.message.trim()) newErrors.message = "Message is required";
+    else if (!/^[a-zA-Z0-9\s]*$/.test(formData.message)) {
+      newErrors.message = "Only alphanumeric allowed";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Clear error for the field being edited
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+
+    // Validation logic on change (prevent invalid input)
+    if (name === "name") {
+      // Allow only alphabets and spaces
+      if (/^[a-zA-Z\s]*$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+    } else if (name === "subject" || name === "message") {
+      // Allow alphabets, numbers and spaces (alphanumeric)
+      if (/^[a-zA-Z0-9\s]*$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+    } else {
+      // For email and other fields, just update
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handler for form submission would go here
-    alert("Thanks for contacting us! We'll get back to you soon.");
+    
+    if (!validate()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(data.message || "Form submitted successfully!");
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: "",
+        });
+        setErrors({});
+      } else {
+        toast.error(data.message || "Something went wrong.");
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("Failed to submit form.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -106,21 +201,37 @@ export default function Contact() {
                     </label>
                     <input
                       type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
                       placeholder="Your Name"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium"
-                      required
+                      className={`w-full bg-white border ${
+                        errors.name ? "border-red-500" : "border-gray-200"
+                      } rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium`}
                     />
+                    {errors.name && (
+                      <p className="text-red-500 text-xs ml-1">{errors.name}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700 ml-1">
                       Email
                     </label>
                     <input
-                      type="email"
+                      type="text"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
                       placeholder="your@email.com"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium"
-                      required
+                      className={`w-full bg-white border ${
+                        errors.email ? "border-red-500" : "border-gray-200"
+                      } rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium`}
                     />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs ml-1">
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -130,10 +241,17 @@ export default function Contact() {
                   </label>
                   <input
                     type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
                     placeholder="How can we help?"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium"
-                    required
+                    className={`w-full bg-white border ${
+                      errors.subject ? "border-red-500" : "border-gray-200"
+                    } rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium`}
                   />
+                  {errors.subject && (
+                    <p className="text-red-500 text-xs ml-1">{errors.subject}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -142,17 +260,27 @@ export default function Contact() {
                   </label>
                   <textarea
                     rows={4}
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
                     placeholder="Tell us more..."
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium"
-                    required
+                    className={`w-full bg-white border ${
+                      errors.message ? "border-red-500" : "border-gray-200"
+                    } rounded-xl px-4 py-3 outline-none focus:border-secondary focus:ring-2 focus:ring-secondary/10 transition-all font-medium`}
                   ></textarea>
+                  {errors.message && (
+                    <p className="text-red-500 text-xs ml-1">
+                      {errors.message}
+                    </p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-secondary text-white font-bold py-4 rounded-xl hover:bg-[#3d7a30] transition-transform active:scale-[0.98] shadow-lg shadow-secondary/20 flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="w-full bg-secondary text-white font-bold py-4 rounded-xl hover:bg-[#3d7a30] transition-transform active:scale-[0.98] shadow-lg shadow-secondary/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Send Message <MdSend />
+                  {loading ? "Sending..." : "Send Message"} <MdSend />
                 </button>
               </form>
             </div>

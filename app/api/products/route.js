@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import mongoose from 'mongoose';
+import dbConnect from '@/lib/admin/db';
 import Product from '@/models/Product';
 import Variant from '@/models/Variant';
 import Batch from '@/models/Batch';
@@ -127,26 +128,37 @@ export async function GET(req) {
           const total = result[0].metadata[0]?.total || 0;
 
           // ------------------------------------------------------------------
-          // HYDRATE WITH STOCK (BATCH-BASED)
+          // HYDRATE WITH STOCK (VENDOR OR BATCH-BASED)
           // ------------------------------------------------------------------
+          const vendorId = searchParams.get('vendor');
+          const pincode = searchParams.get('pincode');
+          const { default: VendorStock } = await import('@/models/VendorStock');
+
           const productsWithStock = await Promise.all(data.map(async (p) => {
-               // 1. Fetch all variants for this product to get total stock
-               const variants = await Variant.find({ product: p._id, isActive: true }).select('_id');
-               const variantIds = variants.map(v => v._id);
+               let totalStock = 0;
 
-               // 2. Sum active batches for these variants
-               const batches = await Batch.find({
-                    variant: { $in: variantIds },
-                    status: 'active',
-                    expiryDate: { $gt: new Date() },
-                    quantity: { $gt: 0 }
-               });
+               if (vendorId && mongoose.Types.ObjectId.isValid(vendorId)) {
+                    // Fetch stock from VendorStock for specific vendor
+                    const vendorStocks = await VendorStock.find({
+                         vendor: vendorId,
+                         product: p._id,
+                    });
+                    totalStock = vendorStocks.reduce((sum, s) => sum + s.quantity, 0);
+               } else {
+                    // Fallback to global batch stock if no vendor specified (legacy or admin view)
+                    const variants = await Variant.find({ product: p._id, isActive: true }).select('_id');
+                    const variantIds = variants.map(v => v._id);
 
-               const totalStock = batches.reduce((sum, b) => sum + b.quantity, 0);
+                    const batches = await Batch.find({
+                         variant: { $in: variantIds },
+                         status: 'active',
+                         expiryDate: { $gt: new Date() },
+                         quantity: { $gt: 0 }
+                    });
 
-               // 3. Update activeVariants in the product object if it exists
-               // The aggregation sliced activeVariants to 1. We can update that one variant's stock if we want,
-               // but simpler to just add `totalStock` to the product root for the PLP card to use.
+                    totalStock = batches.reduce((sum, b) => sum + b.quantity, 0);
+               }
+
                return {
                     ...p,
                     totalStock

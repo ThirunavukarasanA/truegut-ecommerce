@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { MdClose, MdSave, MdCalendarToday, MdInventory } from "react-icons/md";
 import AdminInput from "../common/AdminInput";
 import AdminSelect from "../common/AdminSelect";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch, adminFetchWithToast } from "@/lib/admin/adminFetch";
 import toast from "react-hot-toast";
 
 export default function BatchModal({ isOpen, onClose, onSave }) {
@@ -135,25 +135,28 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
           }
 
           setSubmitting(true);
-          const toastId = toast.loading("Creating batch...");
 
           try {
-               const res = await fetch("/api/admin/stockmanagement", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData)
-               });
-               const data = await res.json();
+               const data = await adminFetchWithToast(
+                    "/api/admin/stockmanagement",
+                    {
+                         method: "POST",
+                         body: JSON.stringify(formData)
+                    },
+                    {
+                         loading: "Creating batch...",
+                         success: "Batch created successfully",
+                         error: "Failed to create batch"
+                    },
+                    toast
+               );
 
                if (data.success) {
-                    toast.success("Batch created successfully", { id: toastId });
                     onSave();
                     onClose();
-               } else {
-                    toast.error(data.error || "Failed to create batch", { id: toastId });
                }
           } catch (error) {
-               toast.error("An error occurred", { id: toastId });
+               console.error(error);
           } finally {
                setSubmitting(false);
                const today = new Date().toISOString().split('T')[0];

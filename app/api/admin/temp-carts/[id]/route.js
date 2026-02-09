@@ -1,31 +1,21 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import TempCart from '@/models/TempCart';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-
-async function isAdmin() {
-     const cookieStore = await cookies();
-     const token = cookieStore.get('admin_token')?.value;
-     if (!token) return false;
-
-     try {
-          const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret_key');
-          const { payload } = await jwtVerify(token, secret);
-          const allowedRoles = ['system_admin', 'owner', 'admin'];
-          return allowedRoles.includes(payload.role);
-     } catch (error) {
-          return false;
-     }
-}
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function DELETE(req, { params }) {
      try {
-          await dbConnect();
-          if (!(await isAdmin())) {
+          const user = await getAuthenticatedUser();
+          if (!user) {
                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
           }
 
+          // Strict role check for deletion
+          if (!['system_admin', 'owner', 'admin'].includes(user.role)) {
+               return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+
+          await dbConnect();
           const { id } = await params;
           const deletedCart = await TempCart.findByIdAndDelete(id);
 

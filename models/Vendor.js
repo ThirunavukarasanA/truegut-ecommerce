@@ -17,10 +17,22 @@ const VendorSchema = new mongoose.Schema({
           required: true,
      },
      address: String,
+     pincode: {
+          type: String,
+          trim: true
+     },
+     companyName: {
+          type: String,
+          trim: true
+     },
      serviceablePincodes: [String], // Array of pincode strings
      stock: {
           type: Number,
           default: 0,
+     },
+     connectedUser: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User'
      },
      isActive: {
           type: Boolean,

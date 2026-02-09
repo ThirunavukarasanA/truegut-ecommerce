@@ -1,8 +1,8 @@
-import { SignJWT } from 'jose';
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import User from '@/models/User';
 import { cookies } from 'next/headers';
+import { signAccessToken, signRefreshToken } from '@/lib/admin/auth-helpers';
 
 export async function POST(req) {
      try {
@@ -23,30 +23,39 @@ export async function POST(req) {
 
           // Enforce Role-Based Access
           // Matches roles defined in models/User.js and scripts/seed.mjs
-          const allowedRoles = ['system_admin', 'owner', 'admin'];
+          const allowedRoles = ['system_admin', 'owner', 'admin', 'vendor'];
 
           if (!allowedRoles.includes(user.role)) {
                return NextResponse.json({ error: 'Unauthorized: Admin access only' }, { status: 403 });
           }
 
-          // Create JWT
-          const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret_key');
-          const alg = 'HS256';
+          // Create Tokens
+          const payload = { sub: user._id.toString(), role: user.role, email: user.email };
+          const accessToken = await signAccessToken(payload);
+          const refreshToken = await signRefreshToken(payload);
 
-          const token = await new SignJWT({ sub: user._id.toString(), role: user.role, email: user.email })
-               .setProtectedHeader({ alg })
-               .setIssuedAt()
-               .setExpirationTime('24h')
-               .sign(secret);
+          const cookieStore = await cookies();
 
-          // Set Cookie
-          (await cookies()).set({
-               name: 'admin_token',
-               value: token,
+          // Set Access Token Cookie
+          cookieStore.set({
+               name: 'admin_access_token',
+               value: accessToken,
                httpOnly: true,
                path: '/',
                secure: process.env.NODE_ENV === 'production',
-               maxAge: 60 * 60 * 24, // 1 day
+               maxAge: 15 * 60, // 15 minutes
+               sameSite: 'lax',
+          });
+
+          // Set Refresh Token Cookie
+          cookieStore.set({
+               name: 'admin_refresh_token',
+               value: refreshToken,
+               httpOnly: true,
+               path: '/',
+               secure: process.env.NODE_ENV === 'production',
+               maxAge: 7 * 24 * 60 * 60, // 7 days
+               sameSite: 'lax',
           });
 
           return NextResponse.json({
@@ -58,6 +67,7 @@ export async function POST(req) {
                }
           });
      } catch (error) {
+          console.error("Login error:", error);
           return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }

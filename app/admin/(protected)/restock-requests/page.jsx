@@ -4,7 +4,7 @@ import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import AdminTable from "@/components/admin/common/AdminTable";
 import { toast } from "react-hot-toast";
 import { MdEmail, MdPhone, MdCalendarToday, MdInventory } from "react-icons/md";
-import { adminFetchWithToast } from "@/lib/adminFetch";
+import { adminFetchWithToast } from "@/lib/admin/adminFetch";
 
 export default function RestockRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -31,6 +31,7 @@ export default function RestockRequestsPage() {
   const headers = [
     { label: "Product / Variant" },
     { label: "Customer Info" },
+    { label: "Location" },
     { label: "Date Requested" },
     { label: "Status" },
   ];
@@ -48,7 +49,7 @@ export default function RestockRequestsPage() {
           headers={headers}
           loading={loading}
           emptyMessage="No restock requests found."
-          colCount={4}
+          colCount={5}
         >
           {requests.map((item) => (
             <tr
@@ -81,6 +82,23 @@ export default function RestockRequestsPage() {
                 </div>
               </td>
               <td className="px-8 py-4">
+                <div className="flex flex-col gap-1">
+                  {item.pincode ? (
+                    <div className="text-xs text-gray-600">
+                      <span className="font-mono bg-gray-50 px-1 py-0.5 rounded border border-gray-100">{item.pincode}</span>
+                      {item.postOffice && <span className="ml-1 text-gray-500">- {item.postOffice}</span>}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">Global / No Loc</span>
+                  )}
+                  {item.vendor && (
+                    <div className="text-[10px] text-primary bg-primary/5 px-1.5 py-0.5 rounded w-fit border border-primary/20">
+                      Vendor: {item.vendor.name}
+                    </div>
+                  )}
+                </div>
+              </td>
+              <td className="px-8 py-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <MdCalendarToday size={14} className="text-gray-400" />
                   {new Date(item.createdAt).toLocaleDateString("en-IN", {
@@ -92,13 +110,12 @@ export default function RestockRequestsPage() {
               </td>
               <td className="px-8 py-4">
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    item.status === "pending"
-                      ? "bg-amber-100 text-amber-700"
-                      : item.status === "notified"
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${item.status === "pending"
+                    ? "bg-amber-100 text-amber-700"
+                    : item.status === "notified"
                       ? "bg-green-100 text-green-700"
                       : "bg-gray-100 text-gray-600"
-                  }`}
+                    }`}
                 >
                   {item.status.toUpperCase()}
                 </span>

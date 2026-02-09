@@ -2,7 +2,6 @@ import React from "react";
 import Navbar from "./Navbar";
 import Hero from "./Hero";
 import BestSellers from "./BestSellers";
-import Features from "./Features";
 import Testimonials from "./Testimonials";
 import BlogSection from "./BlogSection";
 import Newsletter from "./Newsletter";
@@ -28,9 +27,7 @@ export default function HomeComponent() {
         <RevealOnScroll delay={0.3}>
           <ProbioticIntelligence />
         </RevealOnScroll>
-        {/* <RevealOnScroll delay={0.3}>
-          <Features />
-        </RevealOnScroll> */}
+
         <RevealOnScroll delay={0.3}>
           <Testimonials />
         </RevealOnScroll>

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import dbConnect from "@/lib/db";
+import dbConnect from "@/lib/admin/db";
 import Product from "@/models/Product";
 import Batch from "@/models/Batch";
 import Category from "@/models/Category"; // Ensure model is compiled
-import { getAuthenticatedUser } from "@/lib/api-auth";
-import { uploadToCloudinary } from "@/lib/cloudinary";
-import { generateProductCode, generateSlug } from "@/lib/model-helpers";
+import { getAuthenticatedUser } from "@/lib/admin/api-auth";
+import { uploadToCloudinary } from "@/lib/admin/cloudinary";
+import { generateProductCode, generateSlug } from "@/lib/admin/model-helpers";
 
 export async function GET(req) {
   const user = await getAuthenticatedUser();
@@ -21,6 +21,9 @@ export async function GET(req) {
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const status = searchParams.get("status");
+    const page = parseInt(searchParams.get("page")) || 1;
+    const limit = parseInt(searchParams.get("limit")) || 20;
+    const skip = (page - 1) * limit;
 
     let query = {};
 
@@ -39,10 +42,6 @@ export async function GET(req) {
 
         // Filter for products NOT in that list
         query._id = { $nin: validProductIds };
-        // Optionally, you might want to only show "active" products that are out of stock,
-        // but "Out of Stock" usually implies checking the catalog for what's missing.
-        // If you want ONLY active products that are out of stock:
-        // query.status = 'active';
       } else {
         // Handle "Active", "Draft" - lowercase them to match schema enum
         query.status = status.toLowerCase();
@@ -56,11 +55,25 @@ export async function GET(req) {
       ];
     }
 
-    const products = await Product.find(query)
-      .populate("category", "name")
-      .sort("-createdAt");
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .populate("category", "name")
+        .sort("-createdAt")
+        .skip(skip)
+        .limit(limit),
+      Product.countDocuments(query)
+    ]);
 
-    return NextResponse.json({ success: true, data: products });
+    return NextResponse.json({
+      success: true,
+      data: products,
+      pagination: {
+        current: page,
+        pages: Math.ceil(total / limit),
+        total,
+        limit
+      }
+    });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error.message },
@@ -94,12 +107,9 @@ export async function POST(req) {
     const body = {
       name: getValue("name"),
       category: getValue("category"),
-      // price: REMOVED
-      // stock: REMOVED
-      // openingStock: REMOVED
       status: getValue("status") || "draft",
       description: getValue("description"),
-      history: getValue("history"), // Added back as per schema
+      history: getValue("history"),
       microbialProfile: getValue("microbialProfile"),
       shelfLifeDays: getValue("shelfLifeDays")
         ? parseInt(getValue("shelfLifeDays"))

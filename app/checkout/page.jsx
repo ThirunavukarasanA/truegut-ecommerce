@@ -4,13 +4,20 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Home/Navbar";
 import Image from "next/image";
+import Link from "next/link";
 import Footer from "@/components/Home/Footer";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+import { useLocation } from "@/context/LocationContext";
+import { FcGoogle } from "react-icons/fc";
+import { MdLogin } from "react-icons/md";
+import { FiMinus, FiPlus } from "react-icons/fi";
+import { secureFetch } from "@/utils/secureFetch";
 
 export default function CheckoutPage() {
-     const { cartItems, fetchCart } = useCart();
+     const { cartItems, fetchCart, updateItemQuantity } = useCart();
      const { user } = useAuth();
+     const { pincode, district, postOffice, vendorId } = useLocation();
      const router = useRouter();
 
      const [loading, setLoading] = useState(false);
@@ -21,28 +28,121 @@ export default function CheckoutPage() {
           phone: "",
           address: "",
           city: "",
+          state: "",
           zipLevel: "", // Zip Code
           country: "India", // Default
      });
 
+     // Initialize Form from User or TempCustomer
      useEffect(() => {
-          if (user) {
+          const initForm = async () => {
+               if (user) {
+                    setFormData(prev => ({
+                         ...prev,
+                         firstName: user.name?.split(" ")[0] || "",
+                         lastName: user.name?.split(" ")[1] || "",
+                         email: user.email || "",
+                         phone: user.phone || ""
+                    }));
+               } else {
+                    // Fetch Temp Customer Data
+                    try {
+                         const data = await secureFetch("/api/temp-customer");
+                         if (data && data.success) {
+                              const tempCustomer = data;
+                              setFormData(prev => ({
+                                   ...prev,
+                                   firstName: tempCustomer.firstName || prev.firstName,
+                                   lastName: tempCustomer.lastName || prev.lastName,
+                                   email: tempCustomer.email || prev.email,
+                                   phone: tempCustomer.phone || prev.phone,
+                                   address: tempCustomer.address?.street || prev.address,
+                                   city: tempCustomer.address?.city || prev.city,
+                                   state: tempCustomer.address?.state || prev.state,
+                                   zipLevel: tempCustomer.address?.pincode || prev.zipLevel,
+                              }));
+                         }
+                    } catch (e) {
+                         console.error("Failed to load temp customer data", e);
+                    }
+               }
+          };
+          initForm();
+     }, [user]);
+
+     useEffect(() => {
+          if (pincode || district) {
                setFormData(prev => ({
                     ...prev,
-                    firstName: user.name?.split(" ")[0] || "",
-                    lastName: user.name?.split(" ")[1] || "",
-                    email: user.email || "",
-                    phone: user.phone || ""
+                    city: district || prev.city,
+                    zipLevel: pincode || prev.zipLevel
                }));
           }
-     }, [user]);
+     }, [pincode, district]);
+
+     // Auto-fill City/State when pincode reaches 6 digits
+     useEffect(() => {
+          const fetchLocationDetails = async () => {
+               if (formData.zipLevel.length === 6) {
+                    try {
+                         const res = await fetch(`/api/location/${formData.zipLevel}`);
+                         const data = await res.json();
+                         if (data.serviceable) {
+                              setFormData(prev => ({
+                                   ...prev,
+                                   city: data.district || prev.city,
+                                   state: data.state || prev.state
+                              }));
+                         }
+                    } catch (e) {
+                         console.error("Failed to fetch location details", e);
+                    }
+               }
+          };
+          fetchLocationDetails();
+     }, [formData.zipLevel]);
 
      const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
      const shipping = 0; // Free shipping for now logic
      const total = subtotal + shipping;
 
      const handleChange = (e) => {
-          setFormData({ ...formData, [e.target.name]: e.target.value });
+          const { name, value } = e.target;
+
+          // Number restriction logic for specific fields
+          if (name === 'phone' || name === 'zipLevel') {
+               const numericValue = value.replace(/\D/g, ''); // Remove non-digits
+               setFormData(prev => ({ ...prev, [name]: numericValue }));
+          } else {
+               setFormData(prev => ({ ...prev, [name]: value }));
+          }
+     };
+
+     const handleBlur = async () => {
+          if (!user) {
+               try {
+                    // Save partial data to temp-customer
+                    const payload = {
+                         firstName: formData.firstName,
+                         lastName: formData.lastName,
+                         email: formData.email,
+                         phone: formData.phone,
+                         address: {
+                              street: formData.address,
+                              city: formData.city,
+                              pincode: formData.zipLevel,
+                              country: formData.country,
+                              state: formData.state
+                         }
+                    };
+                    await secureFetch("/api/temp-customer", {
+                         method: "POST",
+                         body: payload
+                    });
+               } catch (e) {
+                    console.error("Autosave failed", e);
+               }
+          }
      };
 
      const handleSubmit = async (e) => {
@@ -50,50 +150,87 @@ export default function CheckoutPage() {
           setLoading(true);
 
           try {
-               // 1. Validate Cart (Optional: Call /api/checkout/validate)
-
-               // 2. Create Order
-               const orderPayload = {
+               // 1. Validate Cart
+               const validationPayload = {
                     items: cartItems.map(item => ({
-                         product: item.id || item.productId, // Handle both ID formats just in case
+                         product: item.id || item.productId,
                          variant: item.variantId,
                          quantity: item.quantity,
                          price: item.price
                     })),
-                    shippingAddress: {
-                         firstName: formData.firstName,
-                         lastName: formData.lastName,
-                         address: formData.address,
-                         city: formData.city,
-                         zip: formData.zipLevel,
-                         country: formData.country,
-                         phone: formData.phone,
-                         email: formData.email
-                    },
-                    paymentMethod: "COD", // Hardcoded for now until payment gateway
-                    totalAmount: total
+                    location: { pincode: formData.zipLevel } // Use form pincode for validation
                };
 
-               // Call Order Creation API (Need to verify endpoint in next step if this fails)
-               // Assuming /api/orders for customer creation
-               const res = await fetch("/api/orders", {
+               const validateData = await secureFetch("/api/checkout/validate", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(orderPayload)
+                    body: validationPayload // secureFetch encrypts this
                });
 
-               const data = await res.json();
+               if (!validateData.success || !validateData.isValid) {
+                    if (validateData.errors && validateData.errors.length > 0) {
+                         validateData.errors.forEach(err => toast.error(err));
+                    }
+                    if (validateData.warnings && validateData.warnings.length > 0) {
+                         validateData.warnings.forEach(warn => toast(warn, { icon: '⚠️' }));
+                         fetchCart();
+                    }
+                    setLoading(false);
+                    return; // Stop checkout
+               }
+
+               // Valid but warnings
+               if (validateData.warnings && validateData.warnings.length > 0) {
+                    validateData.warnings.forEach(warn => toast(warn, { icon: '⚠️' }));
+               }
+
+               // 2. Create Order
+               // Construct payload matching /api/orders expectation
+               const orderPayload = {
+                    customer: {
+                         name: `${formData.firstName} ${formData.lastName}`.trim(),
+                         email: formData.email,
+                         phone: formData.phone,
+                         address: {
+                              street: formData.address,
+                              city: formData.city,
+                              state: formData.state || "",
+                              pincode: formData.zipLevel,
+                              country: formData.country
+                         }
+                    },
+                    items: cartItems.map(item => ({
+                         product: item.id || item.productId,
+                         variant: item.variantId,
+                         quantity: item.quantity,
+                         price: item.price
+                    })),
+                    paymentDetails: {
+                         method: "COD"
+                    },
+                    totalAmount: total,
+               };
+
+               const data = await secureFetch("/api/orders", {
+                    method: "POST",
+                    body: orderPayload
+               });
 
                if (data.success) {
                     toast.success("Order placed successfully!");
-                    // Clear cart (The API might handle this, or we do it manual)
-                    // ideally API clears it. If not, we should call Clear Cart.
-                    // For now, let's assume success redirects to Success Page.
-                    setTimeout(() => {
-                         // Force cart refresh or clear
-                         fetchCart();
-                         router.push(`/account/orders/${data.order._id}`);
-                    }, 1500);
+                    router.push(`/`); // Or success page
+                    setFormData({
+                         firstName: "",
+                         lastName: "",
+                         email: "",
+                         phone: "",
+                         address: "",
+                         city: "",
+                         state: "",
+                         zipLevel: "",
+                         country: ""
+                    });
+
+                    fetchCart(); // This will fetch empty cart now
                } else {
                     toast.error(data.error || "Failed to place order");
                }
@@ -129,43 +266,75 @@ export default function CheckoutPage() {
                          {/* Left: Shipping Form */}
                          <div>
                               <h2 className="text-xl font-bold text-font-title mb-6">Contact & Shipping</h2>
+
+                              {!user && (
+                                   <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                                        <div className="space-y-1">
+                                             <h3 className="font-bold text-gray-800">Already have an account?</h3>
+                                             <p className="text-sm text-gray-500">Sign in for a faster checkout experience.</p>
+                                        </div>
+                                        <div className="flex gap-3 w-full md:w-auto">
+                                             <Link
+                                                  href="/login?redirect=/checkout"
+                                                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-200 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors"
+                                             >
+                                                  <MdLogin size={18} />
+                                                  Login
+                                             </Link>
+                                             <button
+                                                  type="button"
+                                                  onClick={() => toast.error("Google login needs configuration")}
+                                                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-200 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors"
+                                             >
+                                                  <FcGoogle size={18} />
+                                                  Google
+                                             </button>
+                                        </div>
+                                   </div>
+                              )}
+
                               <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
 
                                    <div className="grid grid-cols-2 gap-4">
                                         <div>
                                              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                             <input name="firstName" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.firstName} onChange={handleChange} />
+                                             <input name="firstName" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.firstName} onChange={handleChange} onBlur={handleBlur} />
                                         </div>
                                         <div>
                                              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                             <input name="lastName" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.lastName} onChange={handleChange} />
+                                             <input name="lastName" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.lastName} onChange={handleChange} onBlur={handleBlur} />
                                         </div>
                                    </div>
 
                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                        <input type="email" name="email" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.email} onChange={handleChange} />
+                                        <input type="email" name="email" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.email} onChange={handleChange} onBlur={handleBlur} />
                                    </div>
 
                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                        <input type="tel" name="phone" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.phone} onChange={handleChange} />
+                                        <input type="text" inputMode="numeric" name="phone" required maxLength={10} className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.phone} onChange={handleChange} onBlur={handleBlur} />
                                    </div>
 
                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                                        <input name="address" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.address} onChange={handleChange} />
+                                        <input name="address" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.address} onChange={handleChange} onBlur={handleBlur} />
                                    </div>
 
                                    <div className="grid grid-cols-2 gap-4">
                                         <div>
                                              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                             <input name="city" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.city} onChange={handleChange} />
+                                             <input name="city" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.city} onChange={handleChange} onBlur={handleBlur} />
                                         </div>
                                         <div>
-                                             <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                                             <input name="zipLevel" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.zipLevel} onChange={handleChange} />
+                                             <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                                             <input name="state" required className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.state} onChange={handleChange} onBlur={handleBlur} />
                                         </div>
+                                   </div>
+
+                                   <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                                        <input type="text" inputMode="numeric" name="zipLevel" required disabled maxLength={6} className="w-full border border-gray-200 rounded p-2 focus:ring-primary focus:border-primary" value={formData.zipLevel} onChange={handleChange} onBlur={handleBlur} />
                                    </div>
 
                                    <div className="mt-6 pt-6 border-t border-gray-100">
@@ -202,6 +371,24 @@ export default function CheckoutPage() {
                                                   <div className="flex-1">
                                                        <p className="font-medium text-sm line-clamp-1">{item.name}</p>
                                                        <p className="text-xs text-gray-500">{item.variantName}</p>
+
+                                                       <div className="flex items-center gap-2 mt-1">
+                                                            <button
+                                                                 onClick={() => updateItemQuantity(item.id, item.variantId, item.quantity - 1)}
+                                                                 className="text-gray-400 hover:text-primary disabled:opacity-30"
+                                                                 disabled={item.quantity <= 1 || loading}
+                                                            >
+                                                                 <FiMinus size={14} />
+                                                            </button>
+                                                            <span className="text-xs font-bold text-gray-700 min-w-[16px] text-center">{item.quantity}</span>
+                                                            <button
+                                                                 onClick={() => updateItemQuantity(item.id, item.variantId, item.quantity + 1)}
+                                                                 className="text-gray-400 hover:text-primary disabled:opacity-30"
+                                                                 disabled={loading}
+                                                            >
+                                                                 <FiPlus size={14} />
+                                                            </button>
+                                                       </div>
                                                   </div>
                                                   <div className="text-sm font-bold">₹{(item.price * item.quantity).toFixed(2)}</div>
                                              </div>

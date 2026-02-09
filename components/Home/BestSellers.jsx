@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 // import SectionHeading from "@/components/Common/SectionHeading";
 import ProductCard from "@/components/Common/ProductCard";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -11,20 +11,21 @@ import { HiArrowLongRight } from "react-icons/hi2";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { BiArrowFromLeft, BiArrowToLeft } from "react-icons/bi";
-import { FaArrowRight } from "react-icons/fa";
-import { FaArrowRightLong } from "react-icons/fa6";
+// import { BiArrowFromLeft, BiArrowToLeft } from "react-icons/bi";
+// import { FaArrowRight } from "react-icons/fa";
+// import { FaArrowRightLong } from "react-icons/fa6";
 
 // Hardcoded PRODUCTS removed
 
 export default function BestSellers() {
-  const [products, setProducts] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const prevRef = useRef(null);
   const nextRef = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     async function fetchProducts() {
+      setLoading(true);
       try {
         const res = await fetch("/api/products?limit=8&sort=newest");
         const data = await res.json();
@@ -107,11 +108,29 @@ export default function BestSellers() {
             }}
             className="pb-16!"
           >
-            {products.map((product) => (
-              <SwiperSlide key={product.id}>
-                <ProductCard product={product} />
-              </SwiperSlide>
-            ))}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : products.length > 0 ? (
+              <>
+                {products.map((product) => (
+                  <SwiperSlide key={product.id}>
+                    <ProductCard product={product} />
+                  </SwiperSlide>
+                ))}
+              </>
+            ) : (
+              <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  No products found
+                </h3>
+                <p className="text-gray-500">
+                  Try adjusting your search query to find what you're looking
+                  for.
+                </p>
+              </div>
+            )}
           </Swiper>
 
           <style jsx global>{`

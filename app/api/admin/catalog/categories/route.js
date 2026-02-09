@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Category from '@/models/Category';
-import { getAuthenticatedUser } from '@/lib/api-auth';
-import { generateSlug } from '@/lib/model-helpers';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
+import { generateSlug } from '@/lib/admin/model-helpers';
 
 export async function GET() {
      const user = await getAuthenticatedUser();

@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import User from '@/models/User';
+import { sendEmail } from '@/lib/admin/email';
+import { passwordResetTemplate } from '@/lib/admin/email-templates';
 
 export async function POST(req) {
      try {
@@ -21,12 +23,30 @@ export async function POST(req) {
 
                await user.save();
 
-               // In production: Send email here.
-               // For this dev environment, we'll return the token in the response for testing/demo
+               // Construct Reset URL
+               // Note: Ideally, use an environment variable for the base URL. 
+               // Fallback to origin if not set, or hardcode for dev if needed.
+               const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3051';
+               const resetUrl = `${baseUrl}/admin/reset-password/${resetToken}`;
+
+               // Send Email
+               const emailResult = await sendEmail({
+                    to: user.email,
+                    subject: 'Password Reset Request',
+                    html: passwordResetTemplate(resetUrl, user.role !== 'customer')
+               });
+
+               if (!emailResult.success) {
+                    console.error('Failed to send reset email:', emailResult.error);
+                    // Decide whether to fail the request or just log it. 
+                    // Usually better to fail so user knows.
+                    return NextResponse.json({ error: 'Failed to send reset email' }, { status: 500 });
+               }
+
                return NextResponse.json({
                     success: true,
                     message: 'Password reset link has been sent to your email.',
-                    // ONLY FOR DEV/DEMO PURPOSE:
+                    // KEEPING DEBUG TOKEN FOR DEV CONVENIENCE UNTIL SMTP IS VERIFIED BY USER
                     debugToken: resetToken
                });
           }

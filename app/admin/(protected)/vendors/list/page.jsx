@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MdSearch, MdAdd, MdMap, MdEdit, MdStore, MdPhone, MdEmail, MdDelete, MdInventory2 } from "react-icons/md";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import toast from "react-hot-toast";
 import VendorModal from "./VendorModal";
+import VendorPincodeModal from "./VendorPincodeModal";
 import AdminConfirmModal from "@/components/admin/common/AdminConfirmModal";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import AdminSearch from "@/components/admin/common/AdminSearch";
@@ -11,6 +14,7 @@ import AdminTable from "@/components/admin/common/AdminTable";
 import AdminStatusBadge from "@/components/admin/common/AdminStatusBadge";
 
 export default function VendorsListPage() {
+     const router = useRouter();
      const [vendors, setVendors] = useState([]);
      const [loading, setLoading] = useState(true);
      const [search, setSearch] = useState("");
@@ -18,6 +22,10 @@ export default function VendorsListPage() {
      // Modal State
      const [isModalOpen, setIsModalOpen] = useState(false);
      const [selectedVendor, setSelectedVendor] = useState(null);
+
+     // Pincode Modal State
+     const [isPincodeModalOpen, setIsPincodeModalOpen] = useState(false);
+     const [selectedPincodeVendor, setSelectedPincodeVendor] = useState(null);
 
      // Confirm State
      const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -29,13 +37,14 @@ export default function VendorsListPage() {
 
      const fetchVendors = async () => {
           try {
-               const res = await fetch(`/api/admin/vendors?search=${search}`);
-               const data = await res.json();
+               const data = await adminFetch(`/api/admin/vendors?search=${search}`);
                if (data.success) {
                     setVendors(Array.isArray(data.data) ? data.data : []);
                }
           } catch (e) {
-               toast.error("Failed to load vendors");
+               if (e.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error("Failed to load vendors");
+               }
           } finally {
                setLoading(false);
           }
@@ -51,6 +60,11 @@ export default function VendorsListPage() {
           setIsModalOpen(true);
      };
 
+     const handleViewPincodes = (vendor) => {
+          setSelectedPincodeVendor(vendor);
+          setIsPincodeModalOpen(true);
+     };
+
      const handleDelete = (id) => {
           setVendorToDelete(id);
           setIsConfirmOpen(true);
@@ -60,8 +74,7 @@ export default function VendorsListPage() {
           if (!vendorToDelete) return;
           const toastId = toast.loading("Removing partner...");
           try {
-               const res = await fetch(`/api/admin/vendors/${vendorToDelete}`, { method: "DELETE" });
-               const data = await res.json();
+               const data = await adminFetch(`/api/admin/vendors/${vendorToDelete}`, { method: "DELETE" });
                if (data.success) {
                     toast.success("Partner removed", { id: toastId });
                     fetchVendors();
@@ -69,7 +82,9 @@ export default function VendorsListPage() {
                     toast.error(data.error || "Delete failed", { id: toastId });
                }
           } catch (error) {
-               toast.error("Failed to delete", { id: toastId });
+               if (error.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error("Failed to delete", { id: toastId });
+               }
           } finally {
                setIsConfirmOpen(false);
                setVendorToDelete(null);
@@ -94,28 +109,6 @@ export default function VendorsListPage() {
                     }}
                />
 
-               {/* Quick Stats */}
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6">
-                         <div className="w-16 h-16 bg-bg-color rounded-2xl flex items-center justify-center text-primary shadow-inner">
-                              <MdStore size={28} />
-                         </div>
-                         <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">Total Network</p>
-                              <h3 className="text-3xl font-black text-gray-900">{vendors.length} <span className="text-sm text-gray-400 uppercase tracking-widest ml-1">Partners</span></h3>
-                         </div>
-                    </div>
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex items-center gap-6">
-                         <div className="w-16 h-16 bg-bg-color rounded-2xl flex items-center justify-center text-secondary shadow-inner">
-                              <MdMap size={28} />
-                         </div>
-                         <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1">Logistics Coverage</p>
-                              <h3 className="text-3xl font-black text-gray-900">Live <span className="text-sm text-green-500 uppercase tracking-widest ml-1 font-bold">Active</span></h3>
-                         </div>
-                    </div>
-               </div>
-
                {/* Search & Filters */}
                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6 items-center justify-between">
                     <AdminSearch
@@ -130,7 +123,8 @@ export default function VendorsListPage() {
                <AdminTable
                     headers={[
                          { label: "Partner" },
-                         { label: "Communication" },
+                         { label: "Contact" },
+                         { label: "Email" },
                          { label: "Logistics Hubs" },
                          { label: "Inventory" },
                          { label: "Activity" },
@@ -150,7 +144,6 @@ export default function VendorsListPage() {
                                         </div>
                                         <div>
                                              <p className="font-medium text-gray-900 group-hover:text-primary transition-colors">{vendor.name || "Unnamed Partner"}</p>
-                                             <p className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mt-0.5">ID: {vendor._id ? vendor._id.slice(-6).toUpperCase() : "NEW"}</p>
                                         </div>
                                    </div>
                               </td>
@@ -159,15 +152,22 @@ export default function VendorsListPage() {
                                         <p className="text-xs text-gray-600 flex items-center gap-2">
                                              <MdPhone size={14} className="text-gray-300" /> {vendor.phone}
                                         </p>
+                                   </div>
+                              </td>
+                              <td className="px-8 py-5">
+                                   <div className="space-y-1">
                                         <p className="text-xs text-gray-600 flex items-center gap-2">
-                                             <a href={`mailto:${vendor.email}`} className="text-primary hover:underline">{vendor.email}</a>
+                                             <MdEmail size={14} className="text-gray-300" /> {vendor.email}
                                         </p>
                                    </div>
                               </td>
                               <td className="px-8 py-5">
-                                   <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-bg-color text-primary rounded-lg text-[10px] font-medium uppercase tracking-wide border border-primary/10">
+                                   <button
+                                        onClick={() => handleViewPincodes(vendor)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-bg-color text-primary rounded-lg text-[10px] font-medium uppercase tracking-wide border border-primary/10 hover:bg-primary hover:text-white transition-colors cursor-pointer"
+                                   >
                                         <MdMap size={14} /> {vendor.serviceablePincodes?.length || 0} Points
-                                   </span>
+                                   </button>
                               </td>
                               <td className="px-8 py-5">
                                    <div className="flex flex-col gap-1">
@@ -180,6 +180,13 @@ export default function VendorsListPage() {
                               </td>
                               <td className="px-8 py-5 text-right">
                                    <div className="flex items-center justify-end gap-2 pr-2">
+                                        <button
+                                             onClick={() => router.push(`/admin/vendors/vendor-stock?vendorId=${vendor._id}`)}
+                                             className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all border border-transparent hover:border-indigo-100"
+                                             title="View Stock Inventory"
+                                        >
+                                             <MdInventory2 size={18} />
+                                        </button>
                                         <button
                                              onClick={() => handleEdit(vendor)}
                                              className="p-2.5 text-gray-400 hover:text-primary hover:bg-bg-color active:bg-primary/10 rounded-xl transition-all border border-transparent hover:border-gray-100"
@@ -206,6 +213,13 @@ export default function VendorsListPage() {
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSave}
                     initialData={selectedVendor}
+               />
+
+               {/* Pincode Modal Component */}
+               <VendorPincodeModal
+                    isOpen={isPincodeModalOpen}
+                    onClose={() => setIsPincodeModalOpen(false)}
+                    vendor={selectedPincodeVendor}
                />
 
                <AdminConfirmModal

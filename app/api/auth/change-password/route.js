@@ -1,36 +1,19 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import User from '@/models/User';
-import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
+import { sendEmail } from '@/lib/admin/email';
+import { passwordChangedTemplate } from '@/lib/admin/email-templates';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function POST(req) {
      try {
-          const { oldPassword, newPassword } = await req.json();
-          const cookieStore = await cookies();
-          const token = cookieStore.get('admin_token')?.value;
-
-          if (!token) {
+          const user = await getAuthenticatedUser();
+          if (!user) {
                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
           }
 
-          const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret_key');
-
-          let payload;
-          try {
-               const result = await jwtVerify(token, secret);
-               payload = result.payload;
-          } catch (e) {
-               return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
-          }
-
-          await dbConnect();
-          const user = await User.findById(payload.sub);
-
-          if (!user) {
-               return NextResponse.json({ error: 'User not found' }, { status: 404 });
-          }
+          const { oldPassword, newPassword } = await req.json();
 
           const isMatch = await user.comparePassword(oldPassword);
           if (!isMatch) {
@@ -40,6 +23,18 @@ export async function POST(req) {
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(newPassword, salt);
           await user.save();
+
+          // Send Email Notification
+          try {
+               await sendEmail({
+                    to: user.email,
+                    subject: 'Security Alert: Password Changed',
+                    html: passwordChangedTemplate()
+               });
+          } catch (emailError) {
+               console.error("Failed to send password change email:", emailError);
+               // Continue success flow even if email fails
+          }
 
           return NextResponse.json({ success: true, message: 'Password updated successfully' });
 

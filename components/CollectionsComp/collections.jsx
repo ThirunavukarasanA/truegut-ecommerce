@@ -1,42 +1,48 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ProductCard from "@/components/Common/ProductCard";
 import Navbar from "@/components/Home/Navbar";
 import MobileBottomNav from "@/components/Home/MobileBottomNav";
 import Footer from "@/components/Home/Footer";
 // Hardcoded PRODUCTS removed
-
 import { FiSearch } from "react-icons/fi";
 
+import { useLocation } from "@/context/LocationContext";
+
 export default function collections() {
+  const { vendorId, pincode } = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Debounce search
     const timer = setTimeout(() => {
       fetchProducts();
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, vendorId, pincode]); // Refetch when location changes
 
   async function fetchProducts() {
     setLoading(true);
     try {
       const url = new URL("/api/products", window.location.origin);
       if (searchQuery) url.searchParams.set("search", searchQuery);
+      if (vendorId) url.searchParams.set("vendor", vendorId);
+      if (pincode) url.searchParams.set("pincode", pincode);
 
       const res = await fetch(url.toString());
       const data = await res.json();
       if (data.success) {
-        setProducts(data.products.map(p => ({
-          ...p,
-          id: p._id,
-          image: p.images?.[0]?.url || "/images/placeholder.png",
-          price: p.minPrice || 0
-        })));
+        setProducts(
+          data.products.map((p) => ({
+            ...p,
+            id: p._id,
+            image: p.images?.[0]?.url || "/images/placeholder.png",
+            price: p.minPrice || 0,
+          }))
+        );
       } else {
         setProducts([]);
       }

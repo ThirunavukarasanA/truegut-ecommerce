@@ -5,8 +5,9 @@ export async function POST() {
      try {
           const cookieStore = await cookies();
 
-          // Clear the admin token cookie
-          cookieStore.delete('admin_token');
+          // Clear the admin tokens
+          cookieStore.delete('admin_access_token');
+          cookieStore.delete('admin_refresh_token');
 
           return NextResponse.json({
                success: true,

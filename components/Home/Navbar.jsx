@@ -18,6 +18,8 @@ import { useCart } from "../../context/CartContext";
 import { FaUserAlt } from "react-icons/fa";
 import Image from "next/image";
 import { useAuth } from "../../context/AuthContext";
+import { useLocation } from "../../context/LocationContext";
+import { FiMapPin } from "react-icons/fi";
 
 export default function Navbar() {
   const [scrollPosition, setScrollPosition] = useState(false);
@@ -40,6 +42,7 @@ export default function Navbar() {
   }, [isMobileMenuOpen]);
   const { openCart, cartItems } = useCart();
   const { user } = useAuth();
+  const { pincode, openModal, isLocationSet, postOffice } = useLocation();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -107,8 +110,8 @@ export default function Navbar() {
                     key={link.name}
                     href={link.path}
                     className={`transition-colors ${isActive(link.path)
-                        ? "text-secondary"
-                        : "hover:text-primary"
+                      ? "text-secondary"
+                      : "hover:text-primary"
                       }`}
                   >
                     {link.name}
@@ -120,6 +123,23 @@ export default function Navbar() {
 
           {/* User Actions (Desktop) */}
           <div className="hidden md:flex items-center gap-6 text-gray-600">
+            {/* Pincode Display */}
+            <button
+              onClick={openModal}
+              className="flex items-center gap-2 group hover:text-primary transition-all pr-4 border-r border-gray-200"
+              title="Change Location"
+            >
+              <div className="w-9 h-9 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all">
+                <FiMapPin size={18} />
+              </div>
+              <div className="flex flex-col items-start -space-y-1">
+                <span className="text-[10px] font-bold text-gray-400 tracking-wider">DELIVER TO</span>
+                <span className="text-sm font-bold text-font-title group-hover:text-primary">
+                  {isLocationSet ? pincode : "Set Pincode"}
+                </span>
+              </div>
+            </button>
+
             <Link
               href={user ? "/account" : "/login"}
               className="flex flex-col items-center gap-1 hover:text-primary transition-colors"
@@ -190,7 +210,21 @@ export default function Navbar() {
           <div className="flex flex-col h-full">
             {/* Sidebar Header */}
             <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-bg-color">
-              <span className="font-bold text-lg text-font-title">Menu</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-lg text-font-title">Menu</span>
+                {isLocationSet && (
+                  <button
+                    onClick={() => {
+                      toggleMobileMenu();
+                      openModal();
+                    }}
+                    className="flex items-center gap-1.5 text-xs text-primary font-bold hover:underline"
+                  >
+                    <FiMapPin size={12} />
+                    Pincode: {pincode}
+                  </button>
+                )}
+              </div>
               <button
                 onClick={toggleMobileMenu}
                 className="text-gray-500 hover:text-primary"
@@ -213,8 +247,8 @@ export default function Navbar() {
                     key={link.name}
                     href={link.path}
                     className={`px-6 py-3 font-medium border-l-4 transition-all ${isActive(link.path)
-                        ? "text-primary bg-primary/5 border-primary"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-primary border-transparent hover:border-primary"
+                      ? "text-primary bg-primary/5 border-primary"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-primary border-transparent hover:border-primary"
                       }`}
                     onClick={toggleMobileMenu}
                   >

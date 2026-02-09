@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
-import dbConnect from "@/lib/db";
+import dbConnect from "@/lib/admin/db";
 import Product from "@/models/Product";
 import Category from "@/models/Category";
-import { getAuthenticatedUser } from "@/lib/api-auth";
-import { deleteFromCloudinary, uploadToCloudinary } from "@/lib/cloudinary";
-import { generateProductCode, generateSlug } from "@/lib/model-helpers";
+import { getAuthenticatedUser } from "@/lib/admin/api-auth";
+import { deleteFromCloudinary, uploadToCloudinary } from "@/lib/admin/cloudinary";
+import Variant from "@/models/Variant";
+import Batch from "@/models/Batch";
+import VendorStock from "@/models/VendorStock";
+import RestockRequest from "@/models/RestockRequest";
+import Cart from "@/models/Cart";
+import TempCart from "@/models/TempCart";
+import Order from "@/models/Order";
+import { generateProductCode, generateSlug } from "@/lib/admin/model-helpers";
 
 export async function GET(req, { params }) {
   const user = await getAuthenticatedUser();
@@ -19,23 +26,22 @@ export async function GET(req, { params }) {
   await dbConnect();
 
   try {
-    console.log("Fetching product:", id);
+    ("Fetching product:", id);
     const product = await Product.findById(id).populate("category");
     if (!product) {
-      console.log("Product not found");
+      ("Product not found");
       return NextResponse.json(
         { success: false, error: "Product not found" },
         { status: 404 }
       );
     }
-    console.log("Product found:", product._id);
+    ("Product found:", product._id);
 
     // Check if product has orders
-    console.log("Checking orders...");
-    const Order =
-      mongoose.models.Order || (await import("@/models/Order")).default;
+    // Check if product has orders
+    ("Checking orders...");
     const orderCount = await Order.countDocuments({ "items.product": id });
-    console.log("Order count:", orderCount);
+    ("Order count:", orderCount);
 
     const productData = product.toObject();
     productData.hasOrders = orderCount > 0;
@@ -277,8 +283,6 @@ export async function DELETE(req, { params }) {
     }
 
     // Check if product exists in any orders
-    const Order =
-      mongoose.models.Order || (await import("@/models/Order")).default;
     const orderExists = await Order.findOne({ "items.product": id });
     if (orderExists) {
       return NextResponse.json(
@@ -310,6 +314,17 @@ export async function DELETE(req, { params }) {
         })
       );
     }
+
+    // Cascade Delete Dependencies
+    (`Deleting dependencies for product ${id}...`);
+    await Promise.all([
+      Variant.deleteMany({ product: id }),
+      Batch.deleteMany({ product: id }),
+      VendorStock.deleteMany({ product: id }),
+      RestockRequest.deleteMany({ product: id }),
+      Cart.updateMany({}, { $pull: { items: { productId: id } } }),
+      TempCart.updateMany({}, { $pull: { items: { productId: id } } })
+    ]);
 
     await Product.findByIdAndDelete(id);
 

@@ -63,12 +63,34 @@ const OrderSchema = new mongoose.Schema({
      paymentDetails: {
           method: {
                type: String,
-               enum: ['Cash on Delivery', 'UPI', 'Card', 'Net Banking', 'Wallet'],
+               enum: ['COD', 'UPI', 'Card', 'NetBanking', 'Wallet'],
           },
           transactionId: String,
           paidAt: Date,
           refundedAt: Date,
           refundAmount: Number,
+     },
+     deliveryDetails: {
+          mode: {
+               type: String,
+               enum: ['Local', 'Shiprocket'],
+          },
+          // Local / General details
+          courierName: String,
+          courierPhone: String,
+          trackingId: String,
+          trackingUrl: String,
+          driverName: String,
+          driverPhone: String,
+          transportMode: String,
+
+          // Shiprocket specific
+          shiprocketOrderId: String,
+          shipmentId: String,
+          awbCode: String,
+
+          shippedAt: Date,
+          deliveredAt: Date
      },
      vendor: {
           type: mongoose.Schema.Types.ObjectId,
@@ -84,12 +106,15 @@ const OrderSchema = new mongoose.Schema({
           type: Date,
           default: Date.now,
      }
+}, {
+     timestamps: true,
+     strictPopulate: false
 });
 
 // Update the updatedAt timestamp on save
-OrderSchema.pre('save', function (next) {
+// Update the updatedAt timestamp on save
+OrderSchema.pre('save', function () {
      this.updatedAt = Date.now();
-     next();
 });
 
 export default mongoose.models.Order || mongoose.model('Order', OrderSchema);

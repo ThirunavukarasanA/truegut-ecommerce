@@ -3,14 +3,16 @@ import { useState } from 'react';
 import { MdClose, MdNotificationsActive } from 'react-icons/md';
 import { BiLoaderAlt } from 'react-icons/bi';
 import { toast } from 'react-hot-toast';
+import { useLocation } from "@/context/LocationContext";
 
 export default function RestockModal({ isOpen, onClose, product, variant, onSubmitSuccess }) {
-     const [loading, setLoading] = useState(false);
+     const { vendorId, pincode, postOffice } = useLocation();
      const [formData, setFormData] = useState({
           name: '',
           email: '',
           phone: ''
      });
+     const [loading, setLoading] = useState(false);
 
      if (!isOpen) return null;
 
@@ -25,7 +27,10 @@ export default function RestockModal({ isOpen, onClose, product, variant, onSubm
                     body: JSON.stringify({
                          productId: product._id,
                          variantId: variant._id,
-                         ...formData
+                         ...formData,
+                         pincode,
+                         postOffice,
+                         vendorId
                     })
                });
 
@@ -51,7 +56,7 @@ export default function RestockModal({ isOpen, onClose, product, variant, onSubm
                          <div className="flex justify-between items-center mb-6">
                               <div className="flex items-center gap-2 text-amber-600">
                                    <MdNotificationsActive size={20} />
-                                   <h3 className="text-xl font-bold">Get Notified</h3>
+                                   <h3 className="text-xl font-bold">Stock Request</h3>
                               </div>
                               <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                                    <MdClose size={20} className="text-gray-500" />
@@ -60,7 +65,7 @@ export default function RestockModal({ isOpen, onClose, product, variant, onSubm
 
                          <div className="mb-6">
                               <p className="text-gray-600 text-sm">
-                                   We'll email you when <strong>{product.name} ({variant.name})</strong> is back in stock.
+                                   Enter your details to request stock for <strong>{product.name} ({variant.name})</strong>.
                               </p>
                          </div>
 
@@ -103,7 +108,7 @@ export default function RestockModal({ isOpen, onClose, product, variant, onSubm
                                    disabled={loading}
                                    className="w-full bg-amber-500 text-white font-bold py-3.5 rounded-xl uppercase tracking-wider hover:bg-amber-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                               >
-                                   {loading ? <BiLoaderAlt className="animate-spin" size={20} /> : 'Notify Me'}
+                                   {loading ? <BiLoaderAlt className="animate-spin" size={20} /> : 'Submit Request'}
                               </button>
                          </form>
                     </div>

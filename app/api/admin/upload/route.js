@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { uploadToCloudinary } from '@/lib/cloudinary';
-import { getAuthenticatedUser } from '@/lib/api-auth';
+import { uploadToCloudinary } from '@/lib/admin/cloudinary';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function POST(req) {
      try {
@@ -77,7 +77,7 @@ export async function DELETE(req) {
                          // Remove extension
                          idToDelete = pathWithExt.substring(0, pathWithExt.lastIndexOf('.'));
                     }
-                    console.log(`[Upload API] Extracted ID: ${idToDelete} from URL: ${url}`);
+                    (`[Upload API] Extracted ID: ${idToDelete} from URL: ${url}`);
                } catch (err) {
                     console.error("[Upload API] Error extracting public ID:", err);
                }

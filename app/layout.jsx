@@ -18,10 +18,9 @@ export const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
   display: "swap",
 });
-// export const metadata = {
-//   title: "Fermentaa - Admin Panel",
-//   description: "E-commerce administrative interface",
-// };
+
+
+import LocationModalProxy from "../components/Location/LocationModalProxy";
 
 export default function RootLayout({ children }) {
   return (
@@ -30,6 +29,7 @@ export default function RootLayout({ children }) {
         className={`${poppins.variable} ${plusJakartaSans.variable} antialiased`}
       >
         <Providers>
+          <LocationModalProxy />
           {children}
           <Toaster
             position="top-right"

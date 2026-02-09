@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MdClose, MdSave, MdInventory } from "react-icons/md";
 import AdminInput from "../common/AdminInput";
 import toast from "react-hot-toast";
+import { adminFetchWithToast } from "@/lib/admin/adminFetch";
 
 export default function AddStockModal({ isOpen, onClose, batch, onSave }) {
      const [quantity, setQuantity] = useState("");
@@ -24,28 +25,31 @@ export default function AddStockModal({ isOpen, onClose, batch, onSave }) {
           }
 
           setSubmitting(true);
-          const toastId = toast.loading("Adding stock...");
 
           try {
-               const res = await fetch("/api/admin/stockmanagement", {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                         batchId: batch._id,
-                         quantity: parseInt(quantity)
-                    })
-               });
-               const data = await res.json();
+               const data = await adminFetchWithToast(
+                    "/api/admin/stockmanagement",
+                    {
+                         method: "PUT",
+                         body: JSON.stringify({
+                              batchId: batch._id,
+                              quantity: parseInt(quantity)
+                         })
+                    },
+                    {
+                         loading: "Adding stock...",
+                         success: "Stock added successfully",
+                         error: "Failed to update stock"
+                    },
+                    toast
+               );
 
                if (data.success) {
-                    toast.success("Stock added successfully", { id: toastId });
                     onSave();
                     onClose();
-               } else {
-                    toast.error(data.error || "Failed to update stock", { id: toastId });
                }
           } catch (error) {
-               toast.error("An error occurred", { id: toastId });
+               console.error(error);
           } finally {
                setSubmitting(false);
           }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import { MdAdd, MdEdit, MdDelete, MdInventory2 } from "react-icons/md";
 import toast from "react-hot-toast";
 import { useSettings } from "@/context/SettingsContext";
@@ -20,23 +20,42 @@ export default function ProductsPage() {
      const [loading, setLoading] = useState(true);
      const [filterStatus, setFilterStatus] = useState("All");
      const [search, setSearch] = useState("");
+     const [page, setPage] = useState(1);
+     const [totalPages, setTotalPages] = useState(1);
+     const [totalProducts, setTotalProducts] = useState(0);
 
      // Confirmation States
      const [isConfirmOpen, setIsConfirmOpen] = useState(false);
      const [productToDelete, setProductToDelete] = useState(null);
 
+     // Handlers to prevent double-fetch
+     const handleFilterChange = (status) => {
+          setFilterStatus(status);
+          setPage(1);
+     };
+
+     const handleSearchChange = (val) => {
+          setSearch(val);
+          setPage(1);
+     };
+
      useEffect(() => {
           fetchProducts();
-     }, [search, filterStatus]);
+     }, [search, filterStatus, page]);
 
      const fetchProducts = async () => {
+          setLoading(true);
           try {
-               let url = `/api/admin/catalog/products?search=${search}`;
+               let url = `/api/admin/catalog/products?search=${search}&page=${page}&limit=20`;
                if (filterStatus !== 'All') url += `&status=${filterStatus}`;
 
                const data = await adminFetch(url);
                if (data.success) {
                     setProducts(data.data);
+                    if (data.pagination) {
+                         setTotalPages(data.pagination.pages);
+                         setTotalProducts(data.pagination.total);
+                    }
                }
           } catch (error) {
                if (error.message !== 'Unauthorized - Redirecting to login') {
@@ -103,7 +122,7 @@ export default function ProductsPage() {
                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6 items-center justify-between">
                     <AdminSearch
                          value={search}
-                         onChange={setSearch}
+                         onChange={handleSearchChange}
                          placeholder="Search products by name..."
                          className="w-full lg:w-96"
                     />
@@ -111,7 +130,7 @@ export default function ProductsPage() {
                          {["All", "Active", "Draft", "Out of Stock"].map(status => (
                               <button
                                    key={status}
-                                   onClick={() => setFilterStatus(status)}
+                                   onClick={() => handleFilterChange(status)}
                                    className={`px-5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${filterStatus === status
                                         ? "bg-primary border-primary text-white shadow-md shadow-gray-200"
                                         : "bg-white border-gray-100 text-gray-500 hover:bg-bg-color hover:text-primary"
@@ -192,6 +211,28 @@ export default function ProductsPage() {
                          </tr>
                     ))}
                </AdminTable>
+
+               {/* Pagination Controls */}
+               <div className="px-8 py-6 border-t border-gray-50 flex items-center justify-between text-[10px] font-medium uppercase tracking-widest text-gray-400">
+                    <span>Showing {products.length} of {totalProducts} Products</span>
+                    <div className="flex gap-2">
+                         <button
+                              disabled={page === 1}
+                              onClick={() => setPage(p => Math.max(1, p - 1))}
+                              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
+                              Prev
+                         </button>
+                         <span className="flex items-center px-2">Page {page} of {totalPages}</span>
+                         <button
+                              disabled={page >= totalPages}
+                              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
+                              Next
+                         </button>
+                    </div>
+               </div>
 
                {/* Confirmation Modal */}
                <AdminConfirmModal

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MdShoppingCart, MdDevices, MdHistory, MdLocationOn ,MdDeleteForever} from "react-icons/md";
+import { MdShoppingCart, MdDevices, MdHistory, MdLocationOn, MdDeleteForever } from "react-icons/md";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import toast from "react-hot-toast";
 import { useSettings } from "@/context/SettingsContext";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
@@ -22,15 +23,16 @@ export default function TempCartsPage() {
 
      const fetchTempCarts = async () => {
           try {
-               const res = await fetch("/api/admin/temp-carts");
-               const data = await res.json();
+               const data = await adminFetch("/api/admin/temp-carts");
                if (data.tempCarts) {
                     setTempCarts(data.tempCarts);
                } else {
                     toast.error(data.error || "Failed to load temporary carts");
                }
           } catch (error) {
-               toast.error("An error occurred while fetching data");
+               if (error.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error("An error occurred while fetching data");
+               }
           } finally {
                setLoading(false);
           }
@@ -40,8 +42,7 @@ export default function TempCartsPage() {
           if (!deleteModal.cartId) return;
 
           try {
-               const res = await fetch(`/api/admin/temp-carts/${deleteModal.cartId}`, { method: "DELETE" });
-               const data = await res.json();
+               const data = await adminFetch(`/api/admin/temp-carts/${deleteModal.cartId}`, { method: "DELETE" });
                if (data.success) {
                     toast.success("Cart deleted");
                     fetchTempCarts();
@@ -49,7 +50,9 @@ export default function TempCartsPage() {
                     toast.error(data.error);
                }
           } catch (err) {
-               toast.error("Failed to delete");
+               if (err.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error("Failed to delete");
+               }
           } finally {
                setDeleteModal({ isOpen: false, cartId: null });
           }
@@ -58,6 +61,7 @@ export default function TempCartsPage() {
      const tableHeaders = [
           { label: "Session ID" },
           { label: "Items" },
+          { label: "Location" }, // New Column
           { label: "Device Info" },
           { label: "IP Address" },
           { label: "Last Activity" },
@@ -76,7 +80,7 @@ export default function TempCartsPage() {
                     loading={loading}
                     loadingMessage="Loading temporary carts..."
                     emptyMessage="No temporary carts found."
-                    colCount={7}
+                    colCount={8} // Updated colCount
                >
                     {tempCarts.map((cart) => (
                          <tr key={cart._id} className="hover:bg-gray-50/50 transition-colors group border-b border-gray-100 last:border-b-0">
@@ -134,7 +138,24 @@ export default function TempCartsPage() {
                                              );
                                         })}
                                    </div>
-                                  
+
+                              </td>
+                              <td className="px-8 py-5 align-top">
+                                   <div className="space-y-1">
+                                        {cart.metadata?.location ? (
+                                             <div className="flex items-center gap-2">
+                                                  <MdLocationOn className="text-primary" size={16} />
+                                                  <span className="text-xs font-medium text-gray-700">{cart.metadata.location}</span>
+                                             </div>
+                                        ) : (
+                                             <span className="text-xs text-gray-400 italic">No Location</span>
+                                        )}
+                                        {cart.metadata?.vendorId && (
+                                             <div className="inline-flex items-center px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-[10px] text-primary">
+                                                  Vendor Mode
+                                             </div>
+                                        )}
+                                   </div>
                               </td>
                               <td className="px-8 py-5 align-top">
                                    <div className="flex items-center gap-3">
@@ -149,7 +170,6 @@ export default function TempCartsPage() {
                               </td>
                               <td className="px-8 py-5 align-top">
                                    <div className="flex items-center gap-2">
-                                        <MdLocationOn className="text-gray-300" size={18} />
                                         <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">{cart.metadata?.ipAddress || "Unknown"}</span>
                                    </div>
                               </td>

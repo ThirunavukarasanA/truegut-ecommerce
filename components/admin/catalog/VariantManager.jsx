@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MdAdd, MdEdit, MdDelete, MdInventory2 } from "react-icons/md";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import toast from "react-hot-toast";
 import VariantModal from "./VariantModal";
 import AdminConfirmModal from "../common/AdminConfirmModal";
@@ -18,14 +19,15 @@ export default function VariantManager({ productId }) {
 
      const fetchVariants = async () => {
           try {
-               const res = await fetch(`/api/admin/catalog/variants?product=${productId}`);
-               const data = await res.json();
+               const data = await adminFetch(`/api/admin/catalog/variants?product=${productId}`);
                if (data.success) {
                     setVariants(data.data);
                }
           } catch (error) {
-               console.error("Failed to fetch variants", error);
-               toast.error("Could not load variants");
+               if (error.message !== 'Unauthorized - Redirecting to login') {
+                    console.error("Failed to fetch variants", error);
+                    toast.error("Could not load variants");
+               }
           } finally {
                setLoading(false);
           }
@@ -58,10 +60,9 @@ export default function VariantManager({ productId }) {
           if (!variantToDelete) return;
           const toastId = toast.loading("Deleting variant...");
           try {
-               const res = await fetch(`/api/admin/catalog/variants/${variantToDelete._id}`, {
+               const data = await adminFetch(`/api/admin/catalog/variants/${variantToDelete._id}`, {
                     method: 'DELETE'
                });
-               const data = await res.json();
                if (data.success) {
                     toast.success("Variant deleted", { id: toastId });
                     fetchVariants();
@@ -69,7 +70,9 @@ export default function VariantManager({ productId }) {
                     toast.error(data.error || "Failed to delete", { id: toastId });
                }
           } catch (error) {
-               toast.error("An error occurred", { id: toastId });
+               if (error.message !== 'Unauthorized - Redirecting to login') {
+                    toast.error("An error occurred", { id: toastId });
+               }
           } finally {
                setIsDeleteOpen(false);
                setVariantToDelete(null);
@@ -116,12 +119,12 @@ export default function VariantManager({ productId }) {
                                                   <h4 className="font-bold text-gray-800 text-lg">{v.name}</h4>
                                                   <div className="flex items-center gap-3 mt-1">
                                                        <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md">{v.sku}</span>
-                                                       <span className="text-xs text-gray-400 font-light">Price: <span className="text-gray-900 font-medium">${v.price}</span></span>
+                                                       <span className="text-xs text-gray-400 font-light">Price: <span className="text-gray-900 font-medium">₹{v.price}</span></span>
                                                        {!v.isActive && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">Inactive</span>}
                                                   </div>
                                              </div>
                                         </div>
-                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-2">
                                              <button
                                                   onClick={() => handleEdit(v)}
                                                   className="p-3 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"

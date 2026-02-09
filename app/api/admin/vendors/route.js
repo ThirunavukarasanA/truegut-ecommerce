@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Vendor from '@/models/Vendor';
-import { getAuthenticatedUser } from '@/lib/api-auth';
+import User from '@/models/User';
+import { getAuthenticatedUser } from '@/lib/admin/api-auth';
+import { sendEmail } from '@/lib/admin/email';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import VendorStock from '@/models/VendorStock'; // Ensure model is loaded
 
 export async function GET(req) {
      const user = await getAuthenticatedUser();
@@ -17,7 +22,37 @@ export async function GET(req) {
                query.name = { $regex: search, $options: 'i' };
           }
 
-          const vendors = await Vendor.find(query).sort('-createdAt');
+          // Role-based filtering
+          if (user.role === 'vendor') {
+               query.connectedUser = user._id; // Restrict to self
+          }
+
+          // Populate connected user info if needed, but for list primarily vendor details
+          // Populate connected user info if needed, but for list primarily vendor details
+          const vendors = await Vendor.aggregate([
+               { $match: query },
+               {
+                    $lookup: {
+                         from: 'vendorstocks',
+                         localField: '_id',
+                         foreignField: 'vendor',
+                         as: 'stocks'
+                    }
+               },
+               {
+                    $addFields: {
+                         stock: { $sum: "$stocks.quantity" }
+                    }
+               },
+               {
+                    $project: {
+                         stocks: 0,
+                         __v: 0
+                    }
+               },
+               { $sort: { createdAt: -1 } }
+          ]);
+
           return NextResponse.json({ success: true, data: vendors });
      } catch (error) {
           return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -27,37 +62,78 @@ export async function GET(req) {
 export async function POST(req) {
      const user = await getAuthenticatedUser();
      // Only owner/system_admin can register vendors
-     const allowedRoles = ['system_admin', 'owner'];
+     const allowedRoles = ['system_admin', 'owner', 'admin']; // Expanded to admin if they are managing vendors
      if (!user || !allowedRoles.includes(user.role)) {
-          return NextResponse.json({ success: false, error: 'Unauthorized: Owner/System Admin access required' }, { status: 401 });
+          return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
      }
 
      await dbConnect();
      try {
           const body = await req.json();
 
-          if (!body.email || !body.name) {
-               return NextResponse.json({ success: false, error: 'Name and Email are required' }, { status: 400 });
+          if (!body.email || !body.name || !body.phone) {
+               return NextResponse.json({ success: false, error: 'Name, Email and Phone are required' }, { status: 400 });
           }
 
-          // Real-time Scenario: Check for duplicate email
-          const exists = await Vendor.findOne({ email: body.email.toLowerCase() });
-          if (exists) {
+          const email = body.email.toLowerCase();
+
+          // Check if Vendor or User already exists
+          const existingVendor = await Vendor.findOne({ email });
+          if (existingVendor) {
                return NextResponse.json({ success: false, error: 'A vendor with this email already exists' }, { status: 400 });
           }
 
-          // Real-time Scenario: Validate pincodes
-          if (body.serviceablePincodes && !Array.isArray(body.serviceablePincodes)) {
-               return NextResponse.json({ success: false, error: 'Serviceable Pincodes must be an array' }, { status: 400 });
+          const existingUser = await User.findOne({ email });
+          if (existingUser) {
+               return NextResponse.json({ success: false, error: 'A user account with this email already exists' }, { status: 400 });
           }
 
+          // Generate Random Password
+          const randomPassword = crypto.randomBytes(4).toString('hex'); // 8 char string
+          const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+          // Create User
+          const newUser = await User.create({
+               email,
+               password: hashedPassword,
+               role: 'vendor'
+          });
+
+          // Create Vendor
           const vendor = await Vendor.create({
                ...body,
-               email: body.email.toLowerCase()
+               email,
+               connectedUser: newUser._id,
+               // Ensure arrays are initialized
+               serviceablePincodes: body.serviceablePincodes || []
+          });
+
+          // Send Email
+          const emailSubject = 'Welcome to Fermentaa - Vendor Account Details';
+          const emailHtml = `
+               <div style="font-family: sans-serif; padding: 20px;">
+                    <h2>Welcome, ${body.name}!</h2>
+                    <p>Your vendor account has been created successfully.</p>
+                    <p><strong>Company:</strong> ${body.companyName || 'N/A'}</p>
+                    <p>You can now login to the vendor portal to manage your orders.</p>
+                    <hr />
+                    <h3>Login Credentials:</h3>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Password:</strong> ${randomPassword}</p>
+                    <hr />
+                    <p>Please login and change your password immediately.</p>
+               </div>
+          `;
+
+          await sendEmail({
+               to: email,
+               subject: emailSubject,
+               html: emailHtml
           });
 
           return NextResponse.json({ success: true, data: vendor });
      } catch (error) {
+          console.error("Vendor Registration Error:", error);
           return NextResponse.json({ success: false, error: error.message }, { status: 400 });
      }
 }

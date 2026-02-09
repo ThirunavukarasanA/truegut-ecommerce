@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import { MdSearch, MdVisibility, MdPerson, MdMail, MdPhone, MdCalendarToday } from "react-icons/md";
 import toast from "react-hot-toast";
 import Link from "next/link";

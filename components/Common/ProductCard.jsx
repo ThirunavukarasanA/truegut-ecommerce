@@ -8,7 +8,7 @@ import { useCart } from "../../context/CartContext";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
-  console.log("product : ", product);
+  ("product : ", product);
 
   return (
     <div className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col relative">
@@ -62,12 +62,21 @@ export default function ProductCard({ product }) {
             </Link>
           </div>
 
-          <button
-            onClick={() => addToCart(product)}
-            className="bg-secondary text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
-          >
-            ADD TO BAG
-          </button>
+          {product.totalStock > 0 ? (
+            <button
+              onClick={() => addToCart(product)}
+              className="bg-secondary text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
+            >
+              ADD TO BAG
+            </button>
+          ) : (
+            <Link
+              href={`/collections/${product.slug}`}
+              className="bg-amber-500 text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-amber-600 transition-colors text-center"
+            >
+              STOCK REQUEST
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { MdInventory, MdAdd, MdWarning, MdDateRange, MdDelete } from "react-icons/md";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import AdminSearch from "@/components/admin/common/AdminSearch";
 import AdminTable from "@/components/admin/common/AdminTable";
 import AdminStatusBadge from "@/components/admin/common/AdminStatusBadge";
+import AdminTabs from "@/components/admin/common/AdminTabs";
 import StatsCard from "@/components/admin/StatsCard";
 import BatchModal from "@/components/admin/stockmanagement/BatchModal";
 import toast from "react-hot-toast";
@@ -18,16 +19,41 @@ export default function StockManagementPage() {
      const [loading, setLoading] = useState(true);
      const [search, setSearch] = useState("");
      const [isModalOpen, setIsModalOpen] = useState(false);
+     const [page, setPage] = useState(1);
+     const [totalPages, setTotalPages] = useState(1);
+     const [totalBatches, setTotalBatches] = useState(0);
+     const [stats, setStats] = useState({
+          totalPhysical: 0,
+          totalAllocated: 0,
+          totalStock: 0,
+          expiredStock: 0,
+          expiredBatchesCount: 0,
+          lowStockBatches: 0
+     });
 
      // New State
      const [activeTab, setActiveTab] = useState("all");
      const [addStockBatch, setAddStockBatch] = useState(null);
 
+     // Handlers to prevent double-fetch
+     const handleSearchChange = (val) => {
+          setSearch(val);
+          setPage(1);
+     };
+
      const fetchBatches = async () => {
+          setLoading(true);
           try {
-               const data = await adminFetch(`/api/admin/stockmanagement?search=${search}`);
+               const data = await adminFetch(`/api/admin/stockmanagement?search=${search}&page=${page}&limit=20`);
                if (data.success) {
                     setBatches(data.data);
+                    if (data.pagination) {
+                         setTotalPages(data.pagination.pages);
+                         setTotalBatches(data.pagination.total);
+                    }
+                    if (data.stats) {
+                         setStats(data.stats);
+                    }
                }
           } catch (error) {
                console.error(error);
@@ -38,15 +64,9 @@ export default function StockManagementPage() {
 
      useEffect(() => {
           fetchBatches();
-     }, [search]);
+     }, [search, page]);
 
-     // Stats Calculation
-     const totalStock = batches.filter(b => b.status === 'active').reduce((acc, b) => acc + (b.quantity || 0), 0);
-     const expiredStock = batches.filter(b => b.status === 'expired').reduce((acc, b) => acc + (b.quantity || 0), 0);
-     const expiredBatchesCount = batches.filter(b => b.status === "expired").length;
-     const lowStockBatches = batches.filter(b => b.quantity < 10 && b.status === "active").length;
-
-     // Filter Logic
+     // Filter Logic (Client-side filtering of CURRENT PAGE)
      const getFilteredBatches = () => {
           switch (activeTab) {
                case "expire-soon":
@@ -90,27 +110,27 @@ export default function StockManagementPage() {
                {/* Stats Cards */}
                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatsCard
-                         title="Total Stock (Active)"
-                         value={totalStock.toLocaleString()}
+                         title="Warehouse Stock"
+                         value={(stats.totalPhysical || 0).toLocaleString()}
                          icon={MdInventory}
-                         variant="blue" // changed from color prop to variant prop for consistency
+                         variant="blue"
                     />
                     <StatsCard
-                         title="Low Stock"
-                         value={lowStockBatches}
-                         icon={MdWarning}
+                         title="Allocated Stock"
+                         value={(stats.totalAllocated || 0).toLocaleString()}
+                         icon={MdAdd}
                          variant="orange"
                     />
                     <StatsCard
-                         title="Expired Stock"
-                         value={expiredStock.toLocaleString()}
-                         icon={MdDateRange}
+                         title="Net Stock (Total)"
+                         value={(stats.totalStock || 0).toLocaleString()}
+                         icon={MdInventory}
                          variant="rose"
                     />
                     <StatsCard
-                         title="Expired Batches"
-                         value={expiredBatchesCount}
-                         icon={MdWarning}
+                         title="Expired Stock"
+                         value={(stats.expiredStock || 0).toLocaleString()}
+                         icon={MdDateRange}
                          variant="rose"
                     />
                </div>
@@ -118,24 +138,15 @@ export default function StockManagementPage() {
                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-6 items-center justify-between">
                     <AdminSearch
                          value={search}
-                         onChange={setSearch}
+                         onChange={handleSearchChange}
                          placeholder="Search stock..."
                          className="w-full lg:w-96"
                     />
-                    <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-                         {tabs.map(tab => (
-                              <button
-                                   key={tab.id}
-                                   onClick={() => setActiveTab(tab.id)}
-                                   className={`px-5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${activeTab === tab.id
-                                        ? "bg-primary border-primary text-white shadow-md shadow-gray-200"
-                                        : "bg-white border-gray-100 text-gray-500 hover:bg-bg-color hover:text-primary"
-                                        }`}
-                              >
-                                   {tab.label}
-                              </button>
-                         ))}
-                    </div>
+                    <AdminTabs
+                         tabs={tabs}
+                         activeTab={activeTab}
+                         onChange={setActiveTab}
+                    />
                </div>
 
                <AdminTable
@@ -185,14 +196,14 @@ export default function StockManagementPage() {
                                         </div>
                                    </td>
 
-                                   {/* Reserved Asset (Placeholder) */}
+                                   {/* Reserved Asset (Allocated to Vendor) */}
                                    <td className="px-8 py-5">
-                                        <span className="text-sm font-medium text-gray-500">0</span>
+                                        <span className="text-sm font-medium text-gray-500">{batch.allocatedQuantity || 0}</span>
                                    </td>
 
-                                   {/* Net Stock */}
+                                   {/* Net Stock (Total) */}
                                    <td className="px-8 py-5">
-                                        <span className="text-sm font-bold text-gray-700">{batch.quantity}</span>
+                                        <span className="text-sm font-bold text-gray-700">{(batch.quantity || 0) + (batch.allocatedQuantity || 0)}</span>
                                    </td>
 
                                    {/* Batch Info */}
@@ -235,6 +246,28 @@ export default function StockManagementPage() {
                          );
                     })}
                </AdminTable>
+
+               {/* Pagination Controls */}
+               <div className="px-8 py-6 border-t border-gray-50 flex items-center justify-between text-[10px] font-medium uppercase tracking-widest text-gray-400">
+                    <span>Showing {filteredBatches.length} (Page {page}) of {totalBatches} Batches</span>
+                    <div className="flex gap-2">
+                         <button
+                              disabled={page === 1}
+                              onClick={() => setPage(p => Math.max(1, p - 1))}
+                              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
+                              Prev
+                         </button>
+                         <span className="flex items-center px-2">Page {page} of {totalPages}</span>
+                         <button
+                              disabled={page >= totalPages}
+                              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                              className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:border-gray-300 hover:text-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                         >
+                              Next
+                         </button>
+                    </div>
+               </div>
 
                <BatchModal
                     isOpen={isModalOpen}

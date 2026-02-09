@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
+import dbConnect from '@/lib/admin/db';
 import Customer from '@/models/Customer';
 import bcrypt from 'bcryptjs';
 
@@ -30,6 +30,21 @@ export async function POST(req) {
                password: hashedPassword,
                phone
           });
+
+          // Send Welcome Email
+          try {
+               const { sendEmail } = await import('@/lib/admin/email');
+               const { welcomeTemplate } = await import('@/lib/admin/email-templates');
+
+               await sendEmail({
+                    to: customer.email,
+                    subject: 'Welcome to Fermentaa!',
+                    html: welcomeTemplate(customer.name)
+               });
+          } catch (emailError) {
+               console.error("Welcome Email Failed:", emailError);
+               // Don't block registration if email fails
+          }
 
           return NextResponse.json({
                success: true,

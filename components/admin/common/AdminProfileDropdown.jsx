@@ -6,6 +6,7 @@ import { MdPerson, MdSettings, MdLock, MdLogout, MdKeyboardArrowDown } from "rea
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { adminFetchWithToast } from "@/lib/admin/adminFetch";
 
 export default function AdminProfileDropdown() {
      const [isOpen, setIsOpen] = useState(false);
@@ -30,23 +31,21 @@ export default function AdminProfileDropdown() {
 
      const handleLogout = async () => {
           setLoggingOut(true);
-          const toastId = toast.loading("Signing out...");
 
           try {
-               const res = await fetch("/api/auth/logout", {
-                    method: "POST",
-               });
-
-               const data = await res.json();
-
-               if (res.ok) {
-                    toast.success("Logged out successfully", { id: toastId });
-                    router.push("/admin");
-               } else {
-                    throw new Error(data.error || "Logout failed");
-               }
+               await adminFetchWithToast(
+                    "/api/auth/logout",
+                    { method: "POST" },
+                    {
+                         loading: "Signing out...",
+                         success: "Logged out successfully",
+                         error: "Logout failed"
+                    },
+                    toast
+               );
+               router.push("/admin");
           } catch (error) {
-               toast.error(error.message, { id: toastId });
+               console.error(error);
                setLoggingOut(false);
           }
      };

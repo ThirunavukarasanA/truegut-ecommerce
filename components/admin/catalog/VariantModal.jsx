@@ -5,6 +5,7 @@ import { MdClose, MdLabel, MdQrCode, MdAttachMoney, MdScale } from "react-icons/
 import toast from "react-hot-toast";
 import AdminInput from "@/components/admin/common/AdminInput";
 import { useSettings } from "@/context/SettingsContext";
+import { adminFetchWithToast } from "@/lib/admin/adminFetch";
 
 export default function VariantModal({ isOpen, onClose, editMode, variant, productId, onSave }) {
      const { settings } = useSettings();
@@ -55,7 +56,6 @@ export default function VariantModal({ isOpen, onClose, editMode, variant, produ
           }
 
           setSubmitting(true);
-          const toastId = toast.loading(editMode ? "Updating variant..." : "Creating variant...");
 
           try {
                const url = editMode
@@ -73,27 +73,28 @@ export default function VariantModal({ isOpen, onClose, editMode, variant, produ
                };
 
                // Remove SKU from payload if creating (let backend generate)
-               // UNLESS editing? If editing, we generally keep SKU or allow update? 
-               // User didn't specify editing behavior, but usually SKU is static or separate.
-               // Let's allow backend to generate on POST. On PATCH, if we don't send it, it won't change.
                if (!editMode) delete payload.sku;
 
-               const res = await fetch(url, {
-                    method,
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-               });
-               const data = await res.json();
+               const data = await adminFetchWithToast(
+                    url,
+                    {
+                         method,
+                         body: JSON.stringify(payload),
+                    },
+                    {
+                         loading: editMode ? "Updating variant..." : "Creating variant...",
+                         success: `Variant ${editMode ? "updated" : "added"} successfully`,
+                         error: "Operation failed"
+                    },
+                    toast
+               );
 
                if (data.success) {
                     onSave(data.data);
-                    toast.success(`Variant ${editMode ? "updated" : "added"} successfully`, { id: toastId });
                     onClose();
-               } else {
-                    toast.error(data.error || "Operation failed", { id: toastId });
                }
           } catch (error) {
-               toast.error("An error occurred", { id: toastId });
+               console.error(error);
           } finally {
                setFormData({
                     name: "",
@@ -199,22 +200,26 @@ export default function VariantModal({ isOpen, onClose, editMode, variant, produ
                          </form>
                     </div>
 
-                    {/* Footer */}
-                    <div className="px-8 py-6 border-t border-gray-50 bg-gray-50/30 flex gap-4 flex-shrink-0">
+                    <div className="p-6 border-t border-gray-100 bg-white flex justify-between items-center px-8 shrink-0">
                          <button
                               type="button"
                               onClick={onClose}
-                              className="flex-1 px-8 py-5 bg-white border border-gray-200 text-gray-400 font-light rounded-[1.25rem] hover:bg-gray-50 hover:text-gray-900 transition-all uppercase text-[11px] tracking-[0.2em]"
+                              className="px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] text-red-500 bg-red-50 rounded-xl transition-all flex items-center gap-2 group"
                          >
-                              Cancel
+                              <MdClose
+                                   size={18}
+                                   className="group-hover:rotate-90 transition-transform"
+                              />{" "}
+                              Close
                          </button>
+
                          <button
                               type="submit"
                               form="variant-form"
                               disabled={submitting}
-                              className="flex-1 px-8 py-5 bg-gray-900 text-white font-bold rounded-[1.25rem] hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 uppercase text-[11px] tracking-[0.2em]"
+                              className="px-10 py-4 bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-secondary cursor-pointer active:scale-95 transition-all shadow-xl shadow-gray-200 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                          >
-                              {submitting ? "Processing..." : editMode ? "Update Variant" : "Add Variant"}
+                              {submitting ? (editMode ? "Updating..." : "Creating...") : (editMode ? "Update Variant" : "Add Variant")}
                          </button>
                     </div>
                </div>

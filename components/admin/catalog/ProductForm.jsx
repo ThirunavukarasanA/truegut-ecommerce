@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AdminInput from "@/components/admin/common/AdminInput";
 import AdminRichText from "@/components/admin/common/AdminRichText";
@@ -131,6 +131,23 @@ export default function ProductForm({
   const removeExistingImage = (index) => {
     setExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
+
+  // Memoized handlers for RichText to prevent update loops
+  const handleDescriptionChange = useCallback((content) => {
+    setFormData((prev) => (prev.description === content ? prev : { ...prev, description: content }));
+  }, []);
+
+  const handleHistoryChange = useCallback((content) => {
+    setFormData((prev) => (prev.history === content ? prev : { ...prev, history: content }));
+  }, []);
+
+  const handleNutritionChange = useCallback((content) => {
+    setFormData((prev) => (prev.nutrition === content ? prev : { ...prev, nutrition: content }));
+  }, []);
+
+  const handleMicrobialProfileChange = useCallback((content) => {
+    setFormData((prev) => (prev.microbialProfile === content ? prev : { ...prev, microbialProfile: content }));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -485,9 +502,7 @@ export default function ProductForm({
               <AdminRichText
                 label="Short Description"
                 value={formData.description}
-                onChange={(content) =>
-                  setFormData({ ...formData, description: content })
-                }
+                onChange={handleDescriptionChange}
                 placeholder="Brief overview of the product..."
                 icon={MdInfo}
                 required
@@ -498,9 +513,7 @@ export default function ProductForm({
               <AdminRichText
                 label="History / Brand Story"
                 value={formData.history}
-                onChange={(content) =>
-                  setFormData({ ...formData, history: content })
-                }
+                onChange={handleHistoryChange}
                 placeholder="The origin story behind this ferment..."
                 icon={MdHistory}
                 helperText="Formatted details"
@@ -510,9 +523,7 @@ export default function ProductForm({
               <AdminRichText
                 label="Nutrition & Ingredients"
                 value={formData.nutrition}
-                onChange={(content) =>
-                  setFormData({ ...formData, nutrition: content })
-                }
+                onChange={handleNutritionChange}
                 placeholder="List of ingredients and nutritional values..."
                 icon={MdRestaurantMenu}
                 helperText="Formatted details"
@@ -522,9 +533,7 @@ export default function ProductForm({
               <AdminRichText
                 label="Microbial Profile"
                 value={formData.microbialProfile}
-                onChange={(content) =>
-                  setFormData({ ...formData, microbialProfile: content })
-                }
+                onChange={handleMicrobialProfileChange}
                 placeholder="Details of microbial strains and benefits..."
                 icon={MdScience}
                 helperText="Formatted details"
@@ -629,9 +638,9 @@ export default function ProductForm({
           type="submit"
           form="product-form"
           disabled={submitting}
-          className="px-10 py-4 bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-blue-600 active:scale-95 transition-all shadow-xl shadow-gray-200 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+          className="px-10 py-4 bg-gray-900 text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-secondary cursor-pointer active:scale-95 transition-all shadow-xl shadow-gray-200 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {submitting ? "Saving..." : "Save Product"}
+          {submitting ? (editMode ? "Updating..." : "Creating...") : (editMode ? "Update Product" : "Create Product")}
         </button>
       </div>
     </form>

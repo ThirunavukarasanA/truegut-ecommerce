@@ -1,12 +1,11 @@
-"use client";
 import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FiX, FiShoppingBag, FiTrash2 } from "react-icons/fi";
+import { FiX, FiShoppingBag, FiTrash2, FiMinus, FiPlus } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
 
 export default function CartDrawer() {
-  const { isCartOpen, closeCart, cartItems, removeFromCart } = useCart();
+  const { isCartOpen, closeCart, cartItems, removeFromCart, updateItemQuantity } = useCart();
   // Disable body scroll when cart is open
   useEffect(() => {
     if (isCartOpen) {
@@ -18,6 +17,11 @@ export default function CartDrawer() {
       document.body.style.overflow = "unset";
     };
   }, [isCartOpen]);
+
+  const handleUpdateQuantity = async (item, newQuantity) => {
+    if (newQuantity < 1) return;
+    await updateItemQuantity(item.id, item.variantId, newQuantity);
+  };
 
   return (
     <div
@@ -63,7 +67,7 @@ export default function CartDrawer() {
               <div className="space-y-4">
                 {cartItems.map((item) => (
                   <div
-                    key={item.id}
+                    key={item.id + (item.variantId || "")}
                     className="flex gap-4 border-b border-gray-100 pb-4"
                   >
                     <div className="relative w-20 h-20">
@@ -82,13 +86,30 @@ export default function CartDrawer() {
                       {item.variantId && (
                         <p className="text-xs text-gray-400 mb-1">Variant: {item.name?.includes("Variant") ? item.name : item.variantName || "Standard"}</p>
                       )}
+
                       <div className="flex justify-between items-center mt-2">
-                        <div className="text-sm text-gray-500">
-                          {item.quantity} x{" "}
-                          <span className="font-bold text-font-title">
-                            ₹{item.price.toFixed(2)}
-                          </span>
+                        {/* Quantity Controls */}
+                        <div className="flex items-center border border-gray-200 rounded-md">
+                          <button
+                            onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                            className="px-2 py-1 text-gray-500 hover:text-primary disabled:opacity-50"
+                            disabled={item.quantity <= 1}
+                          >
+                            <FiMinus size={12} />
+                          </button>
+                          <span className="px-2 text-xs font-bold text-gray-700 min-w-[20px] text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                            className="px-2 py-1 text-gray-500 hover:text-primary"
+                          >
+                            <FiPlus size={12} />
+                          </button>
                         </div>
+
+                        <div className="text-sm font-bold text-font-title ml-auto mr-4">
+                          ₹{(item.price * item.quantity).toFixed(2)}
+                        </div>
+
                         <button
                           onClick={() => removeFromCart(item.id, item.variantId)}
                           className="text-gray-400 hover:text-red-500 transition-colors"

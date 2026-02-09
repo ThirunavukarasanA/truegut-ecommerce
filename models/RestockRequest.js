@@ -29,6 +29,12 @@ const RestockRequestSchema = new mongoose.Schema({
           type: String, // Store as string to handle +, -, spaces
           default: null
      },
+     pincode: String,
+     postOffice: String,
+     vendor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Vendor'
+     },
      status: {
           type: String,
           enum: ['pending', 'notified', 'cancelled'],

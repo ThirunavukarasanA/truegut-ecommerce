@@ -1,56 +1,95 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { verifyToken, signAccessToken } from './lib/admin/auth-helpers';
 
-export async function proxy(req) {
-     const { pathname } = req.nextUrl;
+export default async function proxy(request) {
+     const path = request.nextUrl.pathname;
 
-     // Public routes that don't require authentication
-     const publicRoutes = ['/admin', '/admin/forgot-password', '/admin/reset-password'];
+     // Public paths (Matcher handles the prefix, so we only check specific sub-paths if needed)
+     // Since matcher restricts to /admin and /api/admin, we verify specific overrides
+     // Note: /admin/login is public. /admin might be public (login page).
+     const isPublicPath = path === '/admin' || path === '/admin/login';
 
-     // Check if the current path is a public route
-     const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+     const accessToken = request.cookies.get('admin_access_token')?.value;
+     const refreshToken = request.cookies.get('admin_refresh_token')?.value;
 
-     // 1. Redirect to dashboard if trying to access login page while logged in
-     if (pathname === '/admin') {
-          const token = req.cookies.get('admin_token')?.value;
-          if (token) {
-               try {
-                    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret_key');
-                    await jwtVerify(token, secret);
-                    // Valid token? Redirect to dashboard
-                    return NextResponse.redirect(new URL('/admin/dashboard', req.url));
-               } catch (e) {
-                    // Invalid token? Stay on login page
+     // 1. Verify Access Token
+     if (accessToken) {
+          const payload = await verifyToken(accessToken);
+          if (payload) {
+               // If user is already on login page and authenticated, redirect to dashboard
+               if (path === '/admin' || path === '/admin/login') {
+                    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
                }
+               return NextResponse.next();
           }
-          // No token? Allowed to stay on login page
-          return NextResponse.next();
      }
 
-     // 2. Allow public routes without authentication
-     if (isPublicRoute) {
-          return NextResponse.next();
+     // 2. If Access Token invalid/missing, try Refresh Token
+     if (refreshToken) {
+          const payload = await verifyToken(refreshToken);
+
+          if (payload) {
+               // Refresh Token is valid! Issue new Access Token
+               const newAccessToken = await signAccessToken({
+                    sub: payload.sub,
+                    role: payload.role,
+                    email: payload.email
+               });
+
+               // If user is on login page, redirect to dashboard
+               if (path === '/admin' || path === '/admin/login') {
+                    const response = NextResponse.redirect(new URL('/admin/dashboard', request.url));
+                    response.cookies.set({
+                         name: 'admin_access_token',
+                         value: newAccessToken,
+                         httpOnly: true,
+                         path: '/',
+                         secure: process.env.NODE_ENV === 'production',
+                         maxAge: 15 * 60, // 15 minutes
+                         sameSite: 'lax',
+                    });
+                    return response;
+               }
+
+               // Update request cookies for downstream access in this same request
+               const requestHeaders = new Headers(request.headers);
+               requestHeaders.set('x-admin-new-token', newAccessToken);
+
+               // Create response with new cookie
+               const response = NextResponse.next({
+                    request: {
+                         headers: requestHeaders,
+                    },
+               });
+
+               response.cookies.set({
+                    name: 'admin_access_token',
+                    value: newAccessToken,
+                    httpOnly: true,
+                    path: '/',
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 15 * 60, // 15 minutes
+                    sameSite: 'lax',
+               });
+
+               return response;
+          }
      }
 
-     // 3. Protect all other /admin/* routes
-     const token = req.cookies.get('admin_token')?.value;
-
-     if (!token) {
-          // No token? Redirect to login
-          return NextResponse.redirect(new URL('/admin', req.url));
+     // 3. If both invalid/missing
+     if (!isPublicPath) {
+          if (path.startsWith('/api/')) {
+               return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+          }
+          return NextResponse.redirect(new URL('/admin', request.url));
      }
 
-     try {
-          const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default_secret_key');
-          await jwtVerify(token, secret);
-          return NextResponse.next();
-     } catch (error) {
-          // Invalid token? Redirect to login
-          return NextResponse.redirect(new URL('/admin', req.url));
-     }
+     return NextResponse.next();
 }
 
 export const config = {
-     // Match all paths starting with /admin
-     matcher: '/admin/:path*',
+     matcher: [
+          '/admin/:path*',
+          '/api/admin/:path*'
+     ],
 };

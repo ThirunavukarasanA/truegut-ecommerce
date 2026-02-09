@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { adminFetch } from "@/lib/adminFetch";
+import { adminFetch } from "@/lib/admin/adminFetch";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import ProductForm from "@/components/admin/catalog/ProductForm";
 import toast from "react-hot-toast";
@@ -55,15 +55,15 @@ export default function EditProductPage({ params }) {
           if (!formDataToSubmit) return;
           const toastId = toast.loading("Updating product...");
           try {
-               const res = await fetch(`/api/admin/catalog/products/${id}`, {
+               const data = await adminFetch(`/api/admin/catalog/products/${id}`, {
                     method: "PATCH",
                     body: formDataToSubmit,
                });
-               const data = await res.json();
 
                if (data.success) {
                     toast.success("Product updated successfully", { id: toastId });
                     setProduct(data.data);
+                    router.replace('/admin/catalog/products')
                } else {
                     toast.error(data.error || "Failed to update product", { id: toastId });
                }
@@ -106,6 +106,7 @@ export default function EditProductPage({ params }) {
                     title="Confirm Update"
                     message="Are you sure you want to update the product details?"
                     action="update"
+                    type="info"
                />
           </div>
      );
