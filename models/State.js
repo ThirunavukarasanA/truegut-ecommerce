@@ -19,10 +19,6 @@ const StateSchema = new mongoose.Schema({
           unique: true,
           trim: true,
      },
-     range: {
-          type: [Number],
-          default: [],
-     },
      isServiceable: {
           type: Boolean,
           default: true,

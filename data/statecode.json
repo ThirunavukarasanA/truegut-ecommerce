@@ -1,317 +1,146 @@
 [
      {
-          "code": "01",
-          "name": "Andaman & Nicobar Islands",
-          "shortname": "AN",
-          "range": [
-               744101,
-               744999
-          ]
+          "code": "1",
+          "name": "ANDAMAN & NICOBAR"
      },
      {
-          "code": "02",
-          "name": "Andhra Pradesh",
-          "shortname": "AP",
-          "range": [
-               500001,
-               534999
-          ]
+          "code": "2",
+          "name": "ANDHRA PRADESH"
      },
      {
-          "code": "03",
-          "name": "Assam",
-          "shortname": "AS",
-          "range": [
-               780001,
-               789999
-          ]
+          "code": "3",
+          "name": "ARUNACHAL PRADESH"
      },
      {
-          "code": "05",
-          "name": "Chandigarh",
-          "shortname": "CH",
-          "range": [
-               160001,
-               160999
-          ]
+          "code": "4",
+          "name": "ASSAM"
      },
      {
-          "code": "07",
-          "name": "Delhi",
-          "shortname": "DL",
-          "range": [
-               110001,
-               110098
-          ]
+          "code": "5",
+          "name": "BIHAR"
      },
      {
-          "code": "09",
-          "name": "Gujarat",
-          "shortname": "GJ",
-          "range": [
-               360001,
-               396999
-          ]
+          "code": "6",
+          "name": "CHANDIGARH"
+     },
+     {
+          "code": "7",
+          "name": "CHATTISGARH"
+     },
+     {
+          "code": "8",
+          "name": "DADRA & NAGAR HAVELI"
+     },
+     {
+          "code": "9",
+          "name": "DAMAN & DIU"
      },
      {
           "code": "10",
-          "name": "Haryana",
-          "shortname": "HR",
-          "range": [
-               120001,
-               135133
-          ]
+          "name": "DELHI"
      },
      {
           "code": "11",
-          "name": "Himachal Pradesh",
-          "shortname": "HP",
-          "range": [
-               171001,
-               177601
-          ]
+          "name": "GOA"
      },
      {
           "code": "12",
-          "name": "Jammu & Kashmir",
-          "shortname": "JK",
-          "range": [
-               180001,
-               194404
-          ]
+          "name": "GUJARAT"
      },
      {
           "code": "13",
-          "name": "Kerala",
-          "shortname": "KL",
-          "range": [
-               670001,
-               695615
-          ]
+          "name": "HARYANA"
      },
      {
           "code": "14",
-          "name": "Lakshadweep",
-          "shortname": "LD",
-          "range": [
-               682551,
-               682999
-          ]
+          "name": "HIMACHAL PRADESH"
+     },
+     {
+          "code": "15",
+          "name": "JAMMU & KASHMIR"
      },
      {
           "code": "16",
-          "name": "Maharashtra",
-          "shortname": "MH",
-          "range": [
-               400001,
-               444999
-          ]
+          "name": "JHARKHAND"
      },
      {
           "code": "17",
-          "name": "Manipur",
-          "shortname": "MN",
-          "range": [
-               795001,
-               799999
-          ]
+          "name": "KARNATAKA"
      },
      {
           "code": "18",
-          "name": "Meghalaya",
-          "shortname": "ML",
-          "range": [
-               793001,
-               794999
-          ]
+          "name": "KERALA"
      },
      {
           "code": "19",
-          "name": "Karnataka",
-          "shortname": "KA",
-          "range": [
-               560001,
-               591346
-          ]
+          "name": "LAKSHADWEEP"
      },
      {
           "code": "20",
-          "name": "Nagaland",
-          "shortname": "NL",
-          "range": [
-               797001,
-               798999
-          ]
+          "name": "MADHYA PRADESH"
      },
      {
           "code": "21",
-          "name": "Odisha",
-          "shortname": "OR",
-          "range": [
-               751001,
-               769999
-          ]
+          "name": "MAHARASHTRA"
      },
      {
           "code": "22",
-          "name": "Pondicherry",
-          "shortname": "PY",
-          "range": [
-               605001,
-               605999
-          ]
+          "name": "MANIPUR"
      },
      {
           "code": "23",
-          "name": "Punjab",
-          "shortname": "PB",
-          "range": [
-               140001,
-               160055
-          ]
+          "name": "MEGHALAYA"
      },
      {
           "code": "24",
-          "name": "Rajasthan",
-          "shortname": "RJ",
-          "range": [
-               302001,
-               345001
-          ]
+          "name": "MIZORAM"
      },
      {
           "code": "25",
-          "name": "Tamil Nadu",
-          "shortname": "TN",
-          "range": [
-               600001,
-               643999
-          ]
+          "name": "NAGALAND"
      },
      {
           "code": "26",
-          "name": "Tripura",
-          "shortname": "TR",
-          "range": [
-               799001,
-               799999
-          ]
+          "name": "ODISHA"
+     },
+     {
+          "code": "27",
+          "name": "PONDICHERRY"
      },
      {
           "code": "28",
-          "name": "West Bengal",
-          "shortname": "WB",
-          "range": [
-               700001,
-               743999
-          ]
+          "name": "PUNJAB"
      },
      {
           "code": "29",
-          "name": "Sikkim",
-          "shortname": "SK",
-          "range": [
-               737101,
-               737999
-          ]
+          "name": "RAJASTHAN"
      },
      {
           "code": "30",
-          "name": "Arunachal Pradesh",
-          "shortname": "AR",
-          "range": [
-               790001,
-               799999
-          ]
+          "name": "SIKKIM"
      },
      {
           "code": "31",
-          "name": "Mizoram",
-          "shortname": "MZ",
-          "range": [
-               796001,
-               799999
-          ]
+          "name": "TAMIL NADU"
+     },
+     {
+          "code": "32",
+          "name": "TELANGANA"
      },
      {
           "code": "33",
-          "name": "Goa",
-          "shortname": "GA",
-          "range": [
-               403001,
-               403806
-          ]
+          "name": "TRIPURA"
      },
      {
           "code": "34",
-          "name": "Bihar",
-          "shortname": "BR",
-          "range": [
-               800001,
-               854333
-          ]
+          "name": "UTTAR PRADESH"
      },
      {
           "code": "35",
-          "name": "Madhya Pradesh",
-          "shortname": "MP",
-          "range": [
-               450001,
-               489999
-          ]
+          "name": "UTTARAKHAND"
      },
      {
           "code": "36",
-          "name": "Uttar Pradesh",
-          "shortname": "UP",
-          "range": [
-               201001,
-               285223
-          ]
-     },
-     {
-          "code": "37",
-          "name": "Chhattisgarh",
-          "shortname": "CT",
-          "range": [
-               490001,
-               499999
-          ]
-     },
-     {
-          "code": "38",
-          "name": "Jharkhand",
-          "shortname": "JH",
-          "range": [
-               800001,
-               859999
-          ]
-     },
-     {
-          "code": "39",
-          "name": "Uttarakhand",
-          "shortname": "UK",
-          "range": [
-               248001,
-               263676
-          ]
-     },
-     {
-          "code": "40",
-          "name": "Telangana",
-          "shortname": "TG",
-          "range": [
-               500001,
-               534999
-          ]
-     },
-     {
-          "code": "52",
-          "name": "Dadra and Nagar Haveli and Daman and Diu",
-          "shortname": "DN",
-          "range": [
-               396001,
-               396999
-          ]
+          "name": "WEST BENGAL"
      }
 ]

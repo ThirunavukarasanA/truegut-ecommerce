@@ -4,7 +4,6 @@ import State from '@/models/State';
 import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 import { promises as fs } from 'fs';
 import path from 'path';
-import postalcodes from 'postalcodes-india';
 
 const connectDB = async () => {
      if (mongoose.connections[0].readyState) return;
@@ -49,23 +48,8 @@ export async function POST(req) {
 
           (`Found ${localStatesData.length} states in JSON`);
 
-          // Check against npm package
-          let missingStates = [];
-          try {
-               if (typeof postalcodes.getStates === 'function') {
-                    const npmStates = postalcodes.getStates();
-                    // Create a set of normalized names from local JSON for comparison
-                    const localStateNames = new Set(localStatesData.map(s => s.code.toLowerCase()));
+          // Check against npm package removed as statecode.json is specific to scraping source
 
-                    npmStates.forEach(npmState => {
-                         if (!localStateNames.has(npmState.code.toLowerCase())) {
-                              missingStates.push({ code: npmState.code, name: npmState.name });
-                         }
-                    });
-               }
-          } catch (e) {
-               console.warn("Failed to compare with npm package:", e);
-          }
 
           let upsertedCount = 0;
           for (const state of localStatesData) {
@@ -76,9 +60,8 @@ export async function POST(req) {
                     { code: state.code },
                     {
                          name: state.name,
-                         shortName: state.shortname, // Fixed camelCase mapping
+                         shortName: state.shortname || state.name, // Fallback to name if shortname is missing to avoid null unique error
                          code: state.code,
-                         range: state.range,
                          isServiceable: true
                     },
                     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -88,8 +71,7 @@ export async function POST(req) {
 
           return NextResponse.json({
                message: 'States synced successfully from JSON',
-               count: upsertedCount,
-               missingStates: missingStates
+               count: upsertedCount
           });
      } catch (error) {
           console.error('Error syncing states:', error);

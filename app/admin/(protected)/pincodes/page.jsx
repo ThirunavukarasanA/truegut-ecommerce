@@ -8,7 +8,7 @@ import AdminSelect from "@/components/admin/common/AdminSelect";
 import AdminStatusBadge from "@/components/admin/common/AdminStatusBadge";
 import PincodeModal from "@/components/admin/pincodes/PincodeModal";
 import SubPlacesModal from "@/components/admin/pincodes/SubPlacesModal";
-import PincodeGenerationProgress from "@/components/admin/pincodes/PincodeGenerationProgress";
+
 import { adminFetch, adminFetchWithToast } from "@/lib/admin/adminFetch";
 import toast from "react-hot-toast";
 import { MdAdd, MdSync, MdDelete, MdChevronLeft, MdChevronRight } from "react-icons/md";
@@ -89,20 +89,6 @@ export default function PincodesPage() {
                if (res.message) {
                     fetchStates();
                }
-
-               if (res.missingStates && res.missingStates.length > 0) {
-                    // Show a persistent toast or alert for missing states
-                    toast((t) => (
-                         <div>
-                              <p className="font-bold text-yellow-600 mb-1">Update Recommended!</p>
-                              <p className="text-sm mb-2">The following states are missing from your JSON but exist in the library:</p>
-                              <ul className="list-disc pl-4 text-xs text-gray-600 mb-2 max-h-32 overflow-y-auto">
-                                   {res.missingStates.map(s => <li key={s}>{s}</li>)}
-                              </ul>
-                              <button onClick={() => toast.dismiss(t.id)} className="text-xs bg-gray-100 px-2 py-1 rounded">Dismiss</button>
-                         </div>
-                    ), { duration: 6000, icon: '⚠️' });
-               }
           } catch (error) {
                console.error(error);
           } finally {
@@ -172,12 +158,7 @@ export default function PincodesPage() {
           { label: "Actions" }, // Added
      ];
 
-     const [refreshPoll, setRefreshPoll] = useState(0);
 
-     const handleGenerationSuccess = () => {
-          fetchPincodes(); // Refresh table
-          setRefreshPoll(prev => prev + 1); // Trigger polling
-     };
 
      // ... existing fetch functions ...
 
@@ -200,11 +181,7 @@ export default function PincodesPage() {
 
                </AdminPageHeader>
 
-               {/* pincode generation progress */}
-               <PincodeGenerationProgress
-                    triggerPoll={refreshPoll}
-                    onSuccess={fetchPincodes}
-               />
+
 
 
                {/* Filters */}
@@ -326,7 +303,7 @@ export default function PincodesPage() {
                <PincodeModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
-                    onSuccess={handleGenerationSuccess}
+                    onSuccess={fetchPincodes}
                />
 
                <SubPlacesModal
