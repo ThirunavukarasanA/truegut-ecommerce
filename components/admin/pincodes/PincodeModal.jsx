@@ -9,6 +9,7 @@ export default function PincodeModal({ isOpen, onClose, onSuccess }) {
      const [states, setStates] = useState([]);
      const [selectedState, setSelectedState] = useState('');
      const [loading, setLoading] = useState(false);
+     const [range, setRange] = useState(null);
 
      // Fetch states on open
      useEffect(() => {
@@ -16,7 +17,7 @@ export default function PincodeModal({ isOpen, onClose, onSuccess }) {
                fetchStates();
                // Reset state on open
                setSelectedState('');
-               setSelectedState('');
+               setRange(null);
           }
      }, [isOpen]);
 
@@ -34,6 +35,13 @@ export default function PincodeModal({ isOpen, onClose, onSuccess }) {
      const handleStateChange = (e) => {
           const stateCode = e.target.value;
           setSelectedState(stateCode);
+
+          const state = states.find(s => s.code === stateCode);
+          if (state && state.range && state.range.length === 2) {
+               setRange(state.range);
+          } else {
+               setRange(null);
+          }
      };
 
      const handleGenerate = async () => {
@@ -105,7 +113,17 @@ export default function PincodeModal({ isOpen, onClose, onSuccess }) {
                                    </div>
                               )}
 
-
+                              {range && (
+                                   <div className="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm border border-blue-100">
+                                        <p className="font-medium flex items-center gap-2">
+                                             <IoReload className="animate-pulse" />
+                                             Pincode Range Info
+                                        </p>
+                                        <p className="mt-1 opacity-90">
+                                             Range: <strong>{range[0]}</strong> - <strong>{range[1]}</strong>
+                                        </p>
+                                   </div>
+                              )}
                          </div>
 
                          {/* Footer */}
@@ -119,7 +137,7 @@ export default function PincodeModal({ isOpen, onClose, onSuccess }) {
 
                               <button
                                    onClick={handleGenerate}
-                                   disabled={!selectedState || loading}
+                                   disabled={!selectedState || !range || loading}
                                    className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-md shadow-indigo-200 transition-all active:scale-95"
                               >
                                    {loading ? (

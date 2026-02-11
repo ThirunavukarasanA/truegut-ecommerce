@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import { MdEmail, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function UserLogin() {
   const [email, setEmail] = useState("");
@@ -39,6 +40,31 @@ export default function UserLogin() {
       setLoading(false);
     }
   };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success("Welcome back!");
+        login(data.customer);
+        router.push("/account");
+      } else {
+        toast.error(data.error || "Google Login failed");
+      }
+    } catch (error) {
+      toast.error("Something went wrong with Google Login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="flex-1 flex items-center justify-center py-36 px-4">
       <div className="bg-white p-8 md:p-12 rounded-3xl shadow-lg max-w-md w-full border border-gray-100">
@@ -101,6 +127,26 @@ export default function UserLogin() {
           >
             {loading ? "Signing In..." : "Sign In"}
           </button>
+
+          <div className="relative flex items-center justify-center my-6">
+            <div className="border-t border-gray-200 w-full"></div>
+            <span className="bg-white px-3 text-gray-500 text-sm">OR</span>
+            <div className="border-t border-gray-200 w-full"></div>
+          </div>
+
+          <div className="flex justify-center w-full">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                toast.error("Google Login Failed");
+              }}
+              useOneTap
+              theme="outline"
+              size="large"
+              shape="circle"
+              width="100%"
+            />
+          </div>
         </form>
 
         <div className="mt-8 text-center text-gray-500 text-sm">

@@ -73,6 +73,7 @@ export async function POST(req) {
                if (!state) return NextResponse.json({ error: 'State not found' }, { status: 404 });
 
                // Check for existing running job for THIS state
+               // We also check for 'pending' state
                const existingJob = await StateLoad.findOne({
                     stateCode: body.stateCode,
                     status: { $in: ['pending', 'running'] }
@@ -82,58 +83,24 @@ export async function POST(req) {
                     return NextResponse.json({ error: 'A generation job is already running for this state' }, { status: 409 });
                }
 
-               // 1. SCRAPE & SEED (Sync or Async? - Sync is better for user feedback if fast enough, else Async)
-               // Scraping is usually fast (1 HTTP request).
-               try {
-                    const { scrapePincodesForState } = await import('@/lib/admin/pincodeScraper');
-                    const pincodes = await scrapePincodesForState(state.code); // Assuming state.code maps to External ID (1, 2... etc)
+               // Create Job record
+               const newJob = await StateLoad.create({
+                    stateId: state._id,
+                    state: state.name,
+                    stateCode: state.code,
+                    status: 'pending'
+               });
 
-                    if (pincodes.length > 0) {
-                         const bulkOps = pincodes.map(code => ({
-                              updateOne: {
-                                   filter: { pincode: code },
-                                   update: {
-                                        $set: {
-                                             stateId: state._id,
-                                             state: state.name,
-                                             stateCode: state.code
-                                        },
-                                        $setOnInsert: {
-                                             pincode: code,
-                                             status: 'pending',
-                                             active: false,
-                                             isServiceable: true
-                                        }
-                                   },
-                                   upsert: true
-                              }
-                         }));
-                         await Pincode.bulkWrite(bulkOps);
-                    } else {
+               // Trigger Background Worker (Fire and Forget)
+               // This function is async but we do not await it here to allow immediate response
+               // CHANGED: We now rely on the Status API (or Cron) to pick this up to prevent POST timeouts
+               // generateStatePincodes(state, newJob._id);
 
-                         // Should we abort? Maybe.
-                    }
-
-                    // 2. CREATE JOB
-                    const newJob = await StateLoad.create({
-                         stateId: state._id,
-                         state: state.name,
-                         stateCode: state.code,
-                         status: 'pending',
-                         totalPincodes: pincodes.length // Initial known total
-                    });
-
-                    return NextResponse.json({
-                         message: `Seeded ${pincodes.length} pincodes. Job queued for hydration.`,
-                         jobId: newJob._id,
-                         status: 'pending',
-                         seededCount: pincodes.length
-                    });
-
-               } catch (err) {
-                    console.error("Scraping failed:", err);
-                    return NextResponse.json({ error: `Scraping failed: ${err.message}` }, { status: 500 });
-               }
+               return NextResponse.json({
+                    message: 'Job queued successfully. Processing will start shortly.',
+                    jobId: newJob._id,
+                    status: 'pending' // pending until status API picks it up
+               });
           }
 
           return NextResponse.json({ error: 'Invalid Request' }, { status: 400 });

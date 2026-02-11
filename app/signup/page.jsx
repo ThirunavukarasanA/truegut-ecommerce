@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Home/Navbar";
 import Footer from "@/components/Home/Footer";
+import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
 export default function SignupPage() {
@@ -15,6 +17,7 @@ export default function SignupPage() {
           confirmPassword: ""
      });
      const [loading, setLoading] = useState(false);
+     const { login } = useAuth();
      const router = useRouter();
 
      const handleChange = (e) => {
@@ -48,6 +51,30 @@ export default function SignupPage() {
                }
           } catch (error) {
                toast.error("Something went wrong");
+          } finally {
+               setLoading(false);
+          }
+     };
+
+     const handleGoogleSuccess = async (credentialResponse) => {
+          setLoading(true);
+          try {
+               const res = await fetch("/api/auth/google", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ credential: credentialResponse.credential }),
+               });
+               const data = await res.json();
+
+               if (res.ok) {
+                    toast.success("Account created successfully!");
+                    login(data.customer);
+                    router.push("/account");
+               } else {
+                    toast.error(data.error || "Google Signup failed");
+               }
+          } catch (error) {
+               toast.error("Something went wrong with Google Signup");
           } finally {
                setLoading(false);
           }
@@ -118,6 +145,27 @@ export default function SignupPage() {
                               >
                                    {loading ? "Creating Account..." : "Sign Up"}
                               </button>
+
+                              <div className="relative flex items-center justify-center my-6">
+                                   <div className="border-t border-gray-200 w-full"></div>
+                                   <span className="bg-white px-3 text-gray-500 text-sm">OR</span>
+                                   <div className="border-t border-gray-200 w-full"></div>
+                              </div>
+
+                              <div className="flex justify-center w-full">
+                                   <GoogleLogin
+                                        onSuccess={handleGoogleSuccess}
+                                        onError={() => {
+                                             toast.error("Google Signup Failed");
+                                        }}
+                                        useOneTap
+                                        theme="outline"
+                                        size="large"
+                                        shape="circle"
+                                        width="100%"
+                                        text="signup_with"
+                                   />
+                              </div>
                          </form>
 
                          <div className="mt-8 text-center text-gray-500 text-sm">

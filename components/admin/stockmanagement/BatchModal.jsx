@@ -193,7 +193,7 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                     </div>
 
                     {/* Body */}
-                    <form id="batch-form" onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
+                    <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto max-h-[70vh]">
 
                          <AdminSelect
                               label="Product *"
@@ -203,7 +203,6 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                               options={products}
                               placeholder={loadingProducts ? "Loading Products..." : "Select Product"}
                               disabled={loadingProducts}
-                              required={true}
                          />
 
                          <AdminSelect
@@ -214,7 +213,6 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                               options={variants}
                               placeholder={!formData.product ? "Select Product First" : (loadingVariants ? "Loading Variants..." : "Select Variant")}
                               disabled={!formData.product || loadingVariants}
-                              required={true}
                          />
 
                          {/* Split Batch Input */}
@@ -232,7 +230,6 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                                         onChange={(e) => setBatchSuffix(e.target.value.toUpperCase())}
                                         placeholder="Suffix (e.g. A)"
                                         className="w-full bg-white border border-gray-100 rounded-r-2xl py-3.5 px-5 outline-none focus:border-purple-600/30 focus:ring-4 focus:ring-purple-600/5 transition-all text-[13px] font-light text-gray-600 placeholder:font-light shadow-sm"
-                                        required
                                    />
                               </div>
                               <p className="text-[10px] text-gray-400 mt-1 ml-1">
@@ -243,13 +240,12 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
 
                          <div className="grid grid-cols-2 gap-4">
                               <AdminInput
-                                   label="Production Date *"
+                                   label="Production Date"
                                    name="productionDate"
                                    type="date"
                                    value={formData.productionDate}
                                    onChange={handleChange}
                                    icon={MdCalendarToday}
-                                   required={true}
                               />
                               <AdminInput
                                    label="Expiry Date *"
@@ -258,7 +254,6 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                                    value={formData.expiryDate}
                                    onChange={handleChange}
                                    icon={MdCalendarToday}
-                                   required={true}
                               />
                          </div>
 
@@ -270,7 +265,6 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                               onChange={handleChange}
                               placeholder="e.g. 300"
                               min="0"
-                              required={true}
                          />
 
                     </form>
@@ -285,8 +279,7 @@ export default function BatchModal({ isOpen, onClose, onSave }) {
                               Cancel
                          </button>
                          <button
-                              type="submit"
-                              form="batch-form"
+                              onClick={handleSubmit}
                               disabled={submitting}
                               className="px-6 py-2.5 bg-gray-900 text-white rounded-xl shadow-lg shadow-gray-200 hover:bg-black transition-all text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                          >

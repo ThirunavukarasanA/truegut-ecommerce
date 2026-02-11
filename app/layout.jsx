@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${poppins.variable} ${plusJakartaSans.variable} antialiased`}
       >
-        <Providers>
+        <Providers googleClientId={process.env.GOOGLE_CLIENT_ID}>
           <LocationModalProxy />
           {children}
           <Toaster

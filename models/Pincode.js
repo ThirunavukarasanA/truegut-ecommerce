@@ -24,12 +24,6 @@ const PincodeSchema = new mongoose.Schema({
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Vendor'
      },
-     status: {
-          type: String,
-          enum: ['pending', 'active', 'failed'],
-          default: 'pending'
-     },
-     error: String,
      // Rich data from External API
      postOffices: [{
           name: String,
