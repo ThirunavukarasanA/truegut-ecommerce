@@ -5,7 +5,7 @@ import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function GET() {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
      try {
@@ -15,7 +15,7 @@ export async function GET() {
           }
           return NextResponse.json({ success: true, data: settings });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
@@ -23,7 +23,7 @@ export async function POST(req) {
      const user = await getAuthenticatedUser();
      const allowedRoles = ['admin', 'system_admin', 'owner'];
      if (!user || !allowedRoles.includes(user.role)) {
-          return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+          return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
      }
 
      await dbConnect();
@@ -39,6 +39,6 @@ export async function POST(req) {
 
           return NextResponse.json({ success: true, data: settings });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }

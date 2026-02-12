@@ -155,11 +155,11 @@ export default function OrdersPage() {
                                    <div className="flex items-center justify-end gap-2">
                                         <button
                                              onClick={() => router.push(`/admin/orders/${order._id}`)}
-                                             className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-200"
-                                             title="View Details"
+                                             className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-primary/90 hover:shadow-md transition-all shadow-sm"
                                         >
-                                             <MdVisibility size={18} />
+                                             View Details
                                         </button>
+
                                    </div>
                               </td>
                          </tr>

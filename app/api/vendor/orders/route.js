@@ -23,7 +23,7 @@ export async function GET(req) {
           let query = {};
 
           if (user.role === 'vendor') {
-               const vendor = await Vendor.findOne({ connectedUser: user.id });
+               const vendor = await Vendor.findOne({ userId: user.id });
                if (!vendor) {
                     return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
                }
@@ -75,7 +75,7 @@ export async function PATCH(req) {
 
           // Authorization Check
           if (user.role === 'vendor') {
-               const vendor = await Vendor.findOne({ connectedUser: user.id });
+               const vendor = await Vendor.findOne({ userId: user.id });
                if (!vendor || order.vendor?.toString() !== vendor._id.toString()) {
                     return NextResponse.json({ error: 'Unauthorized to manage this order' }, { status: 403 });
                }

@@ -21,11 +21,7 @@ const CustomerSchema = new mongoose.Schema({
      address: {
           type: String,
      },
-     createdAt: {
-          type: Date,
-          default: Date.now,
-     },
-});
+}, { timestamps: true });
 
 
 // Method to compare password

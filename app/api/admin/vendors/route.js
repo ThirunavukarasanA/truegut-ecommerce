@@ -10,7 +10,7 @@ import VendorStock from '@/models/VendorStock'; // Ensure model is loaded
 
 export async function GET(req) {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
      try {
@@ -24,7 +24,7 @@ export async function GET(req) {
 
           // Role-based filtering
           if (user.role === 'vendor') {
-               query.connectedUser = user._id; // Restrict to self
+               query.userId = user._id; // Restrict to self
           }
 
           // Populate connected user info if needed, but for list primarily vendor details
@@ -55,7 +55,7 @@ export async function GET(req) {
 
           return NextResponse.json({ success: true, data: vendors });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
@@ -64,7 +64,7 @@ export async function POST(req) {
      // Only owner/system_admin can register vendors
      const allowedRoles = ['system_admin', 'owner', 'admin']; // Expanded to admin if they are managing vendors
      if (!user || !allowedRoles.includes(user.role)) {
-          return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+          return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
      }
 
      await dbConnect();
@@ -72,7 +72,7 @@ export async function POST(req) {
           const body = await req.json();
 
           if (!body.email || !body.name || !body.phone) {
-               return NextResponse.json({ success: false, error: 'Name, Email and Phone are required' }, { status: 400 });
+               return NextResponse.json({ error: 'Name, Email and Phone are required' }, { status: 400 });
           }
 
           const email = body.email.toLowerCase();
@@ -80,12 +80,12 @@ export async function POST(req) {
           // Check if Vendor or User already exists
           const existingVendor = await Vendor.findOne({ email });
           if (existingVendor) {
-               return NextResponse.json({ success: false, error: 'A vendor with this email already exists' }, { status: 400 });
+               return NextResponse.json({ error: 'A vendor with this email already exists' }, { status: 400 });
           }
 
           const existingUser = await User.findOne({ email });
           if (existingUser) {
-               return NextResponse.json({ success: false, error: 'A user account with this email already exists' }, { status: 400 });
+               return NextResponse.json({ error: 'A user account with this email already exists' }, { status: 400 });
           }
 
           // Generate Random Password
@@ -103,7 +103,7 @@ export async function POST(req) {
           const vendor = await Vendor.create({
                ...body,
                email,
-               connectedUser: newUser._id,
+               userId: newUser._id,
                // Ensure arrays are initialized
                serviceablePincodes: body.serviceablePincodes || []
           });
@@ -125,15 +125,15 @@ export async function POST(req) {
                </div>
           `;
 
-          await sendEmail({
-               to: email,
-               subject: emailSubject,
-               html: emailHtml
-          });
+          // await sendEmail({
+          //      to: email,
+          //      subject: emailSubject,
+          //      html: emailHtml
+          // });
 
           return NextResponse.json({ success: true, data: vendor });
      } catch (error) {
           console.error("Vendor Registration Error:", error);
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }

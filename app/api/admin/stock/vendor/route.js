@@ -23,7 +23,7 @@ export async function GET(req) {
 
           if (user.role === 'vendor') {
                // Vendors can ONLY fetch their own stock
-               const myVendor = await Vendor.findOne({ connectedUser: user._id });
+               const myVendor = await Vendor.findOne({ userId: user._id });
                if (!myVendor) {
                     return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
                }

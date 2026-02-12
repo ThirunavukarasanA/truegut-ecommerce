@@ -6,13 +6,28 @@ import { MdPerson, MdSettings, MdLock, MdLogout, MdKeyboardArrowDown } from "rea
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { adminFetchWithToast } from "@/lib/admin/adminFetch";
+import { adminFetchWithToast, adminFetch } from "@/lib/admin/adminFetch";
 
 export default function AdminProfileDropdown() {
      const [isOpen, setIsOpen] = useState(false);
      const [loggingOut, setLoggingOut] = useState(false);
+     const [user, setUser] = useState(null);
      const dropdownRef = useRef(null);
      const router = useRouter();
+
+     useEffect(() => {
+          const fetchUser = async () => {
+               try {
+                    const res = await adminFetch("/api/auth/me");
+                    if (res && res.user) {
+                         setUser(res.user);
+                    }
+               } catch (error) {
+                    console.error("Failed to fetch user info", error);
+               }
+          };
+          fetchUser();
+     }, []);
 
      useEffect(() => {
           const handleClickOutside = (event) => {
@@ -57,8 +72,8 @@ export default function AdminProfileDropdown() {
                     className="flex items-center gap-3 pl-6 border-l border-gray-100 hover:opacity-80 transition-all"
                >
                     <div className="text-right hidden md:block">
-                         <p className="text-sm font-medium text-gray-700">Admin User</p>
-                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Super Admin</p>
+                         <p className="text-sm font-medium text-gray-700">{user?.email?.split('@')[0] || "Admin User"}</p>
+                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{user?.role?.replace('_', ' ') || "Super Admin"}</p>
                     </div>
                     <div className="relative">
                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200 shadow-sm overflow-hidden">
@@ -81,7 +96,7 @@ export default function AdminProfileDropdown() {
                          >
                               <div className="p-5 bg-gray-50/50 border-b border-gray-100">
                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Account</p>
-                                   <p className="text-sm font-semibold text-gray-800">admin@truegut.com</p>
+                                   <p className="text-sm font-semibold text-gray-800">{user?.email || "admin@truegut.com"}</p>
                               </div>
 
                               <div className="p-2">

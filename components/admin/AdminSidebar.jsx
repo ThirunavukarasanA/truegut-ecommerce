@@ -56,14 +56,29 @@ export default function AdminSidebar() {
           if (role === 'vendor') {
                setMenuItems([
                     {
+                         name: "Dashboard",
+                         icon: <MdDashboard />,
+                         path: "/admin/dashboard"
+                    },
+                    {
+                         name: "My Stocks",
+                         icon: <MdInventory />,
+                         path: "/admin/vendors/vendor-stock"
+                    },
+                    {
                          name: "My Orders",
                          icon: <MdShoppingCart />,
                          path: "/admin/orders/vendor"
                     },
                     {
-                         name: "Settings", // Maybe profile?
+                         name: "My Pincodes",
+                         icon: <MdMap />,
+                         path: "/admin/pincodes/vendor"
+                    },
+                    {
+                         name: "Settings",
                          icon: <MdSettings />,
-                         path: "/admin/settings" // Or profile page
+                         path: "/admin/settings"
                     }
                ]);
                return;
@@ -98,9 +113,7 @@ export default function AdminSidebar() {
                     icon: <MdStore />,
                     submenu: [
                          { name: "Vendor List", path: "/admin/vendors/list" },
-                         { name: "Pincode Mapping", path: "/admin/pincodes/mapping" }, // New
                          { name: "Vendor Stock", path: "/admin/vendors/vendor-stock" },
-
                     ]
                },
                {
@@ -116,7 +129,11 @@ export default function AdminSidebar() {
                {
                     name: "Pincodes",
                     icon: <MdLocationOn />,
-                    path: "/admin/pincodes"
+                    submenu: [
+                         { name: "Global List", path: "/admin/pincodes" },
+                         { name: "Pincode Mapping", path: "/admin/pincodes/mapping" },
+                         { name: "Vendor Pincode List", path: "/admin/vendors/pincodes" }
+                    ]
                },
                {
                     name: "Customers",

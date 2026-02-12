@@ -23,9 +23,6 @@ export default function VendorsListPage() {
      const [isModalOpen, setIsModalOpen] = useState(false);
      const [selectedVendor, setSelectedVendor] = useState(null);
 
-     // Pincode Modal State
-     const [isPincodeModalOpen, setIsPincodeModalOpen] = useState(false);
-     const [selectedPincodeVendor, setSelectedPincodeVendor] = useState(null);
 
      // Confirm State
      const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -61,8 +58,7 @@ export default function VendorsListPage() {
      };
 
      const handleViewPincodes = (vendor) => {
-          setSelectedPincodeVendor(vendor);
-          setIsPincodeModalOpen(true);
+          router.push(`/admin/vendors/pincodes?vendorId=${vendor._id}`);
      };
 
      const handleDelete = (id) => {
@@ -215,12 +211,6 @@ export default function VendorsListPage() {
                     initialData={selectedVendor}
                />
 
-               {/* Pincode Modal Component */}
-               <VendorPincodeModal
-                    isOpen={isPincodeModalOpen}
-                    onClose={() => setIsPincodeModalOpen(false)}
-                    vendor={selectedPincodeVendor}
-               />
 
                <AdminConfirmModal
                     isOpen={isConfirmOpen}

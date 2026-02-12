@@ -9,17 +9,31 @@ export async function GET(req) {
      try {
           await dbConnect();
           const user = await getAuthenticatedUser();
-          const allowedRoles = ['admin', 'system_admin', 'owner'];
-
-          if (!user || !allowedRoles.includes(user.role)) {
-               return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-          }
+          if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
           const { searchParams } = new URL(req.url);
+          const vendorId = searchParams.get('vendorId');
+
+          // Role-based Access Control
+          if (user.role === 'vendor') {
+               const vendorProfile = await Vendor.findOne({ userId: user._id });
+               const myVendorId = vendorProfile?._id?.toString();
+
+               // Vendors can ONLY see their own mapping
+               if (!myVendorId || myVendorId !== vendorId) {
+                    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+               }
+          } else {
+               const allowedRoles = ['admin', 'system_admin', 'owner'];
+               if (!allowedRoles.includes(user.role)) {
+                    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+               }
+          }
           const state = searchParams.get('state'); // Deprecated, but keeping for fallback
           const stateCode = searchParams.get('stateCode');
           const status = searchParams.get('status'); // 'assigned', 'unassigned'
           const search = searchParams.get('search');
+          // vendorId is already extracted above
 
           let query = { isServiceable: true };
           if (stateCode) query.stateCode = stateCode;
@@ -31,6 +45,10 @@ export async function GET(req) {
                query.assignedToVendor = { $exists: true };
           }
 
+          if (vendorId) {
+               query.assignedToVendor = vendorId;
+          }
+
           if (search) {
                query.$or = [
                     { pincode: { $regex: search, $options: 'i' } },
@@ -38,8 +56,8 @@ export async function GET(req) {
                ];
           }
 
-          // Limit logic: Higher limit if filtered by state for bulk selection
-          const limit = (stateCode || state) ? 15000 : 100;
+          // Limit logic: Higher limit if filtered by state or vendor for bulk selection/viewing
+          const limit = (stateCode || state || vendorId) ? 15000 : 100;
 
           const pincodes = await Pincode.find(query)
                .populate('assignedToVendor', 'name')

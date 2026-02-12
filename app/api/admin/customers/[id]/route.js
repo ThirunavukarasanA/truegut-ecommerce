@@ -12,7 +12,7 @@ export async function GET(req, { params }) {
           await dbConnect();
           const customer = await Customer.findById(id);
           if (!customer) {
-               return NextResponse.json({ success: false, error: "Customer not found" }, { status: 404 });
+               return NextResponse.json({ error: "Customer not found" }, { status: 404 });
           }
 
           // Fetch order history with product details populated
@@ -64,6 +64,6 @@ export async function GET(req, { params }) {
           });
      } catch (error) {
           console.error("Customer Detail API Error:", error);
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }

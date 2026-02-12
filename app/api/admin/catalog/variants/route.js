@@ -6,13 +6,13 @@ import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function GET(req) {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      const { searchParams } = new URL(req.url);
      const productId = searchParams.get('product');
 
      if (!productId) {
-          return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
+          return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
      }
 
      await dbConnect();
@@ -20,7 +20,7 @@ export async function GET(req) {
           const variants = await Variant.find({ product: productId }).sort('-createdAt');
           return NextResponse.json({ success: true, data: variants });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
@@ -28,7 +28,7 @@ export async function POST(req) {
      const user = await getAuthenticatedUser();
      const allowedRoles = ['admin', 'system_admin', 'owner'];
      if (!user || !allowedRoles.includes(user.role)) {
-          return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+          return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
      }
 
      await dbConnect();
@@ -36,13 +36,13 @@ export async function POST(req) {
           const body = await req.json();
 
           if (!body.product || !body.name || !body.price) {
-               return NextResponse.json({ success: false, error: 'Product, Name, and Price are required' }, { status: 400 });
+               return NextResponse.json({ error: 'Product, Name, and Price are required' }, { status: 400 });
           }
 
           // Verify Product exists
           const productExists = await Product.findById(body.product);
           if (!productExists) {
-               return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Product not found' }, { status: 404 });
           }
 
           // Auto-generate SKU
@@ -72,12 +72,12 @@ export async function POST(req) {
           // Check for duplicate SKU (if manually provided or after generation)
           const skuExists = await Variant.findOne({ sku: body.sku });
           if (skuExists) {
-               return NextResponse.json({ success: false, error: 'SKU already exists' }, { status: 400 });
+               return NextResponse.json({ error: 'SKU already exists' }, { status: 400 });
           }
 
           const variant = await Variant.create(body);
           return NextResponse.json({ success: true, data: variant });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }

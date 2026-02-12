@@ -14,7 +14,7 @@ export async function GET(req) {
      let vendorDetails = null;
      if (user.role === 'vendor') {
           await dbConnect();
-          vendorDetails = await Vendor.findOne({ connectedUser: user.id });
+          vendorDetails = await Vendor.findOne({ userId: user.id });
      }
 
      return NextResponse.json({

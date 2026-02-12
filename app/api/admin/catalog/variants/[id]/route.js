@@ -55,18 +55,18 @@ export async function PATCH(req, { params }) {
           if (body.sku) {
                const skuExists = await Variant.findOne({ sku: body.sku, _id: { $ne: id } });
                if (skuExists) {
-                    return NextResponse.json({ success: false, error: 'SKU already exists' }, { status: 400 });
+                    return NextResponse.json({ error: 'SKU already exists' }, { status: 400 });
                }
           }
 
           const variant = await Variant.findByIdAndUpdate(id, body, { new: true, runValidators: true });
           if (!variant) {
-               return NextResponse.json({ success: false, error: 'Variant not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
           }
 
           return NextResponse.json({ success: true, data: variant });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }
 
@@ -74,7 +74,7 @@ export async function DELETE(req, { params }) {
      const user = await getAuthenticatedUser();
      const allowedRoles = ['admin', 'system_admin', 'owner'];
      if (!user || !allowedRoles.includes(user.role)) {
-          return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+          return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
      }
 
      const { id } = await params;
@@ -84,7 +84,7 @@ export async function DELETE(req, { params }) {
           // Check for dependencies that block deletion (e.g., existing orders)
           const orderCount = await Order.countDocuments({ 'items.variant': id });
           if (orderCount > 0) {
-               return NextResponse.json({ success: false, error: 'Cannot delete variant: Associated orders exist. Please remove variant from orders first.' }, { status: 400 });
+               return NextResponse.json({ error: 'Cannot delete variant: Associated orders exist. Please remove variant from orders first.' }, { status: 400 });
           }
 
           // Cascade delete dependencies (cleanup related documents)
@@ -98,11 +98,11 @@ export async function DELETE(req, { params }) {
 
           const variant = await Variant.findByIdAndDelete(id);
           if (!variant) {
-               return NextResponse.json({ success: false, error: 'Variant not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Variant not found' }, { status: 404 });
           }
 
           return NextResponse.json({ success: true, message: 'Variant deleted successfully' });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }

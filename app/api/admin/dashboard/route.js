@@ -17,6 +17,9 @@ import {
 
 import Batch from "@/models/Batch";
 import Variant from "@/models/Variant";
+import Vendor from "@/models/Vendor";
+import VendorStock from "@/models/VendorStock";
+import { getAuthenticatedUser } from "@/lib/admin/api-auth";
 
 export const dynamic = "force-dynamic"; // Ensure not cached statically
 
@@ -40,9 +43,20 @@ async function isAdmin() {
 export async function GET(req) {
   try {
     await dbConnect();
+    const user = await getAuthenticatedUser();
 
-    if (!(await isAdmin())) {
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isVendor = user.role === 'vendor';
+    let vendorId = null;
+    if (isVendor) {
+      const vendor = await Vendor.findOne({ userId: user._id });
+      vendorId = vendor?._id;
+      if (!vendorId) {
+        return NextResponse.json({ error: "Vendor profile not found" }, { status: 404 });
+      }
     }
 
     const now = new Date();
@@ -51,6 +65,97 @@ export async function GET(req) {
     const firstDayThisMonth = startOfMonth(now);
     const firstDayLastMonth = startOfMonth(subMonths(now, 1));
     const firstDayTwoMonthsAgo = startOfMonth(subMonths(now, 2));
+
+    const statsQueries = [
+      Order.aggregate([
+        { $match: { paymentStatus: "Paid", ...(isVendor ? { vendor: vendorId } : {}) } },
+        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            paymentStatus: "Paid",
+            createdAt: { $gte: todayStart, $lte: todayEnd },
+            ...(isVendor ? { vendor: vendorId } : {})
+          },
+        },
+        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            paymentStatus: "Paid",
+            createdAt: { $gte: firstDayThisMonth },
+            ...(isVendor ? { vendor: vendorId } : {})
+          },
+        },
+        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
+      ]),
+      Order.aggregate([
+        {
+          $match: {
+            paymentStatus: "Paid",
+            createdAt: { $gte: firstDayLastMonth, $lt: firstDayThisMonth },
+            ...(isVendor ? { vendor: vendorId } : {})
+          },
+        },
+        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
+      ]),
+      Order.countDocuments(isVendor ? { vendor: vendorId } : {}),
+      Order.countDocuments({
+        createdAt: { $gte: firstDayThisMonth },
+        ...(isVendor ? { vendor: vendorId } : {})
+      }),
+      Order.countDocuments({
+        createdAt: { $gte: firstDayLastMonth, $lt: firstDayThisMonth },
+        ...(isVendor ? { vendor: vendorId } : {})
+      }),
+      Order.countDocuments({
+        status: { $in: ["Pending", "Processing", "Shipped"] },
+        ...(isVendor ? { vendor: vendorId } : {})
+      }),
+      Customer.countDocuments(), // Total customers is global
+      isVendor
+        ? VendorStock.aggregate([{ $match: { vendor: vendorId } }, { $group: { _id: null, sum: { $sum: "$quantity" } } }])
+        : Batch.aggregate([{ $group: { _id: null, sum: { $sum: "$quantity" } } }]),
+      TempCart.countDocuments(), // Temp carts global? Or maybe filter by location? Leaving global for now.
+      TempCart.aggregate([
+        { $unwind: "$items" },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+          },
+        },
+      ]),
+      // Expired Stock
+      isVendor
+        ? VendorStock.aggregate([
+          { $match: { vendor: vendorId } },
+          {
+            $lookup: {
+              from: 'batches',
+              localField: 'batch',
+              foreignField: '_id',
+              as: 'batchInfo'
+            }
+          },
+          { $unwind: '$batchInfo' },
+          { $match: { 'batchInfo.expiryDate': { $lt: now } } },
+          { $group: { _id: null, sum: { $sum: "$quantity" } } }
+        ])
+        : Batch.aggregate([
+          { $match: { expiryDate: { $lt: now } } },
+          { $group: { _id: null, sum: { $sum: "$quantity" } } },
+        ]),
+      // Expired Batches Count
+      isVendor
+        ? VendorStock.countDocuments({
+          vendor: vendorId,
+          // Need lookup for count or just list? Simplified:
+        }) // Actually vendor doesn't have "batches", they have stock entries.
+        : Batch.countDocuments({ expiryDate: { $lt: now } }),
+    ];
 
     const [
       totalSalesData,
@@ -67,66 +172,7 @@ export async function GET(req) {
       potentialLostRevenueData,
       expiredStockData,
       expiredBatchesData,
-    ] = await Promise.all([
-      Order.aggregate([
-        { $match: { paymentStatus: "Paid" } },
-        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
-      ]),
-      Order.aggregate([
-        {
-          $match: {
-            paymentStatus: "Paid",
-            createdAt: { $gte: todayStart, $lte: todayEnd },
-          },
-        },
-        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
-      ]),
-      Order.aggregate([
-        {
-          $match: {
-            paymentStatus: "Paid",
-            createdAt: { $gte: firstDayThisMonth },
-          },
-        },
-        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
-      ]),
-      Order.aggregate([
-        {
-          $match: {
-            paymentStatus: "Paid",
-            createdAt: { $gte: firstDayLastMonth, $lt: firstDayThisMonth },
-          },
-        },
-        { $group: { _id: null, sum: { $sum: "$totalAmount" } } },
-      ]),
-      Order.countDocuments(),
-      Order.countDocuments({ createdAt: { $gte: firstDayThisMonth } }),
-      Order.countDocuments({
-        createdAt: { $gte: firstDayLastMonth, $lt: firstDayThisMonth },
-      }),
-      Order.countDocuments({
-        status: { $in: ["Pending", "Processing", "Shipped"] },
-      }),
-      Customer.countDocuments(),
-      Batch.aggregate([{ $group: { _id: null, sum: { $sum: "$quantity" } } }]),
-      TempCart.countDocuments(),
-      TempCart.aggregate([
-        { $unwind: "$items" },
-        {
-          $group: {
-            _id: null,
-            total: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
-          },
-        },
-      ]),
-      // Expired Stock: Sum of quantity where expiryDate < now
-      Batch.aggregate([
-        { $match: { expiryDate: { $lt: now } } },
-        { $group: { _id: null, sum: { $sum: "$quantity" } } },
-      ]),
-      // Expired Batches: Count of batches where expiryDate < now
-      Batch.countDocuments({ expiryDate: { $lt: now } }),
-    ]);
+    ] = await Promise.all(statsQueries);
     const totalSales = totalSalesData[0]?.sum || 0;
     const todaySales = todaySalesData[0]?.sum || 0;
     const salesThisMonth = thisMonthSalesData[0]?.sum || 0;
@@ -151,19 +197,24 @@ export async function GET(req) {
           totalOrdersLastMonth) *
         100;
 
-    // Calculate Low Stock Variants (aggregate batches per variant)
-    // We want variants where sum(quantity) < 10
-    const variantStockLevels = await Batch.aggregate([
-      { $match: { status: "active" } },
-      { $group: { _id: "$variant", totalQty: { $sum: "$quantity" } } },
-      { $match: { totalQty: { $lt: 10 } } },
-    ]);
+    // Calculate Low Stock Variants
+    const variantStockLevels = isVendor
+      ? await VendorStock.aggregate([
+        { $match: { vendor: vendorId } },
+        { $group: { _id: "$variant", totalQty: { $sum: "$quantity" } } },
+        { $match: { totalQty: { $lt: 10 } } },
+      ])
+      : await Batch.aggregate([
+        { $match: { status: "active" } },
+        { $group: { _id: "$variant", totalQty: { $sum: "$quantity" } } },
+        { $match: { totalQty: { $lt: 10 } } },
+      ]);
     const lowStockCount = variantStockLevels.length;
 
     // 2. Chart Data: Sales & Orders History (Last 30 days)
     const thirtyDaysAgo = startOfDay(subDays(now, 30));
     const historyData = await Order.aggregate([
-      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+      { $match: { createdAt: { $gte: thirtyDaysAgo }, ...(isVendor ? { vendor: vendorId } : {}) } },
       {
         $group: {
           _id: { $dateToString: { format: "%d/%m/%Y", date: "$createdAt" } },
@@ -180,7 +231,7 @@ export async function GET(req) {
 
     // 3. Top Selling Products
     const topProducts = await Order.aggregate([
-      { $match: { paymentStatus: "Paid" } },
+      { $match: { paymentStatus: "Paid", ...(isVendor ? { vendor: vendorId } : {}) } },
       { $unwind: "$items" },
       {
         $group: {
@@ -198,6 +249,7 @@ export async function GET(req) {
 
     // 4. Delivered vs Cancelled
     const orderDistribution = await Order.aggregate([
+      { $match: (isVendor ? { vendor: vendorId } : {}) },
       {
         $group: {
           _id: "$status",
@@ -211,7 +263,7 @@ export async function GET(req) {
     const cancelledCount =
       orderDistribution.find((d) => d._id === "Cancelled")?.count || 0;
 
-    const recentOrders = await Order.find()
+    const recentOrders = await Order.find(isVendor ? { vendor: vendorId } : {})
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();

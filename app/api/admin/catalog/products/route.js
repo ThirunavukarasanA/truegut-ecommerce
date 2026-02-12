@@ -11,7 +11,7 @@ export async function GET(req) {
   const user = await getAuthenticatedUser();
   if (!user)
     return NextResponse.json(
-      { success: false, error: "Unauthorized" },
+      { error: "Unauthorized" },
       { status: 401 }
     );
 
@@ -76,7 +76,7 @@ export async function GET(req) {
     });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message },
+      { error: error.message },
       { status: 500 }
     );
   }
@@ -88,7 +88,7 @@ export async function POST(req) {
   const allowedRoles = ["admin", "system_admin", "owner"];
   if (!user || !allowedRoles.includes(user.role)) {
     return NextResponse.json(
-      { success: false, error: "Unauthorized: Admin access required" },
+      { error: "Unauthorized: Admin access required" },
       { status: 401 }
     );
   }
@@ -137,7 +137,7 @@ export async function POST(req) {
     // Validation
     if (!body.name || !body.category) {
       return NextResponse.json(
-        { success: false, error: "Name and Category are required" },
+        { error: "Name and Category are required" },
         { status: 400 }
       );
     }
@@ -146,7 +146,7 @@ export async function POST(req) {
     const catExists = await Category.findById(body.category);
     if (!catExists) {
       return NextResponse.json(
-        { success: false, error: "Selected category does not exist" },
+        { error: "Selected category does not exist" },
         { status: 400 }
       );
     }
@@ -186,12 +186,12 @@ export async function POST(req) {
     console.error("Create Product Error:", error);
     if (error.name === "CastError") {
       return NextResponse.json(
-        { success: false, error: "Invalid Category ID format" },
+        { error: "Invalid Category ID format" },
         { status: 400 }
       );
     }
     return NextResponse.json(
-      { success: false, error: error.message },
+      { error: error.message },
       { status: 400 }
     );
   }

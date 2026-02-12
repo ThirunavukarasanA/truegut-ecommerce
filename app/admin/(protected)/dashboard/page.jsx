@@ -14,7 +14,8 @@ import {
      MdShoppingBag,
      MdAddCircle,
      MdLocalShipping,
-     MdAttachMoney
+     MdAttachMoney,
+     MdMap
 } from "react-icons/md";
 import toast from "react-hot-toast";
 import { useSettings } from "@/context/SettingsContext";
@@ -30,6 +31,7 @@ export default function DashboardPage() {
      const { settings } = useSettings();
      const [data, setData] = useState(null);
      const [loading, setLoading] = useState(true);
+     const [user, setUser] = useState(null);
 
      useEffect(() => {
           fetchDashboardData();
@@ -37,11 +39,19 @@ export default function DashboardPage() {
 
      const fetchDashboardData = async () => {
           try {
-               const result = await adminFetch("/api/admin/dashboard");
-               if (result.success) {
-                    setData(result);
+               const [dashboardRes, userRes] = await Promise.all([
+                    adminFetch("/api/admin/dashboard"),
+                    adminFetch("/api/auth/me")
+               ]);
+
+               if (dashboardRes.success) {
+                    setData(dashboardRes);
                } else {
-                    toast.error(result.error || "Failed to load dashboard data");
+                    toast.error(dashboardRes.error || "Failed to load dashboard data");
+               }
+
+               if (userRes && userRes.user) {
+                    setUser(userRes.user);
                }
           } catch (error) {
                if (error.message !== 'Unauthorized - Redirecting to login') {
@@ -60,16 +70,12 @@ export default function DashboardPage() {
           );
      }
 
+     const isVendor = user?.role === 'vendor';
+
      return (
           <div className="space-y-10 animate-in fade-in duration-500 pb-12 max-w-[1600px] mx-auto">
-               {/* <AdminPageHeader
-                    title="Dashboard"
-                    description="Overview of your store's performance and activity."
-               /> */}
-
-               {/* Section 1: Financial & Sales KPIs */}
+               {/* Section 1: Key Performance Indicators */}
                <section className="space-y-4">
-                    {/* <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Performance</h3> */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                          <StatsCard
                               title="Total Revenue"
@@ -80,14 +86,6 @@ export default function DashboardPage() {
                               trend={parseFloat(data?.stats?.salesGrowth || 0) >= 0 ? "up" : "down"}
                          />
                          <StatsCard
-                              title="Today's Sales"
-                              value={`${settings.currency.symbol}${(data?.stats?.todaySales || 0).toLocaleString()}`}
-                              change="Live"
-                              icon={MdAttachMoney}
-                              variant="cyan"
-                              trend="up"
-                         />
-                         <StatsCard
                               title="Total Orders"
                               value={(data?.stats?.totalOrders || 0).toLocaleString()}
                               change={data?.stats?.orderGrowth}
@@ -96,17 +94,25 @@ export default function DashboardPage() {
                               trend={parseFloat(data?.stats?.orderGrowth || 0) >= 0 ? "up" : "down"}
                          />
                          <StatsCard
-                              title="Active Orders"
-                              value={(data?.stats?.activeOrders || 0).toLocaleString()}
-                              change="Processing"
-                              icon={MdLocalShipping}
-                              variant="indigo"
+                              title="Total Stock"
+                              value={(data?.stats?.totalStockAvailable || 0).toLocaleString()}
+                              change="Available"
+                              icon={MdInventory}
+                              variant="amber"
                               trend="up"
+                         />
+                         <StatsCard
+                              title="Expired Stock"
+                              value={(data?.stats?.totalExpiredStock || 0).toLocaleString()}
+                              change="Action Required"
+                              icon={MdWarning}
+                              variant="red"
+                              trend="down"
                          />
                     </div>
                </section>
 
-               {/* Section 3: Analytics & Actions */}
+               {/* Section 2: Analytics & Actions */}
                <section className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                     {/* Left: Charts */}
                     <div className="xl:col-span-2 space-y-4">
@@ -120,89 +126,106 @@ export default function DashboardPage() {
                          />
                     </div>
 
-                    {/* Right: Carts & Quick Actions */}
+                    {/* Right: Quick Actions & Carts */}
                     <div className="space-y-8">
-                         {/* Guest Carts / Abandoned */}
-                         <div className="space-y-4">
-                              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Cart Activity</h3>
-                              <AdminCard className="bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-sm relative overflow-hidden group">
-                                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full z-0"></div>
-                                   <div className="relative z-10">
-                                        <div className="flex items-center justify-between mb-4">
-                                             <div className="p-3 bg-white rounded-xl shadow-sm text-primary">
-                                                  <MdTimer size={24} />
+                         {!isVendor && (
+                              <div className="space-y-4">
+                                   <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Cart Activity</h3>
+                                   <AdminCard className="bg-gradient-to-br from-white to-gray-50 border-gray-100 shadow-sm relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full z-0"></div>
+                                        <div className="relative z-10">
+                                             <div className="flex items-center justify-between mb-4">
+                                                  <div className="p-3 bg-white rounded-xl shadow-sm text-primary">
+                                                       <MdTimer size={24} />
+                                                  </div>
+                                                  <span className="text-xs font-semibold text-primary bg-primary/5 px-2 py-1 rounded-lg">
+                                                       {data?.stats?.tempCartCount} Active Carts
+                                                  </span>
                                              </div>
-                                             <span className="text-xs font-semibold text-primary bg-primary/5 px-2 py-1 rounded-lg">
-                                                  {data?.stats.tempCartCount} Active Carts
-                                             </span>
+                                             <h4 className="text-lg font-medium text-gray-800 mb-1">Potential Revenue</h4>
+                                             <p className="text-3xl font-bold text-primary mb-4">
+                                                  {settings.currency.symbol}{(data?.stats?.potentialLostRevenue || 0).toLocaleString()}
+                                             </p>
+                                             <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+                                                  Revenue sitting in abandoned or active guest carts.
+                                             </p>
+                                             <Link href="/admin/temp-carts" className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-gray-50 hover:text-primary transition-colors shadow-sm">
+                                                  Recover Carts <MdArrowForward />
+                                             </Link>
                                         </div>
-                                        <h4 className="text-lg font-medium text-gray-800 mb-1">Potential Revenue</h4>
-                                        <p className="text-3xl font-bold text-primary mb-4">
-                                             {settings.currency.symbol}{(data?.stats.potentialLostRevenue || 0).toLocaleString()}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mb-6 leading-relaxed">
-                                             Revenue sitting in abandoned or active guest carts.
-                                        </p>
-                                        <Link href="/admin/temp-carts" className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-gray-50 hover:text-primary transition-colors shadow-sm">
-                                             Recover Carts <MdArrowForward />
-                                        </Link>
-                                   </div>
-                              </AdminCard>
-                         </div>
+                                   </AdminCard>
+                              </div>
+                         )}
 
-                         {/* Quick Actions */}
                          <div className="space-y-4">
                               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Quick Actions</h3>
                               <div className="grid grid-cols-2 gap-4">
-                                   <Link href="/admin/catalog/products/create" className="p-4 bg-white border border-gray-100 rounded-2xl hover:border-primary/30 hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col items-center justify-center gap-3 text-center aspect-square">
-                                        <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                             <MdAddCircle size={24} />
-                                        </div>
-                                        <span className="text-xs font-bold text-gray-600 group-hover:text-primary">Add Product</span>
-                                   </Link>
+                                   {!isVendor && (
+                                        <Link href="/admin/catalog/products/create" className="p-4 bg-white border border-gray-100 rounded-2xl hover:border-primary/30 hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col items-center justify-center gap-3 text-center aspect-square">
+                                             <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                  <MdAddCircle size={24} />
+                                             </div>
+                                             <span className="text-xs font-bold text-gray-600 group-hover:text-primary">Add Product</span>
+                                        </Link>
+                                   )}
                                    <Link href="/admin/orders/all" className="p-4 bg-white border border-gray-100 rounded-2xl hover:border-primary/30 hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col items-center justify-center gap-3 text-center aspect-square">
                                         <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
                                              <MdLocalShipping size={24} />
                                         </div>
                                         <span className="text-xs font-bold text-gray-600 group-hover:text-indigo-600">Ship Orders</span>
                                    </Link>
+                                   {isVendor && (
+                                        <Link href="/admin/pincodes/vendor" className="p-4 bg-white border border-gray-100 rounded-2xl hover:border-primary/30 hover:shadow-md hover:-translate-y-1 transition-all group flex flex-col items-center justify-center gap-3 text-center aspect-square">
+                                             <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                                  <MdMap size={24} />
+                                             </div>
+                                             <span className="text-xs font-bold text-gray-600 group-hover:text-emerald-600">My Pincodes</span>
+                                        </Link>
+                                   )}
                               </div>
                          </div>
                     </div>
                </section>
 
-               {/* Section 4: Data Lists */}
+               {/* Section 3: Data Lists */}
                <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Recent Orders List */}
                     <div className="space-y-4">
                          <div className="flex items-center justify-between">
                               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Recent Activity</h3>
-                              <Link href="/admin/orders/all" className="text-xs font-medium text-primary hover:underline">View All</Link>
+                              <Link href={isVendor ? "/admin/orders/vendor" : "/admin/orders/all"} className="text-xs font-medium text-primary hover:underline">View All</Link>
                          </div>
-                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm h-full">
+                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm h-full min-h-[400px]">
                               <div className="divide-y divide-gray-50">
-                                   {data?.recentOrders.map((order) => (
-                                        <div key={order._id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/admin/orders/${order._id}`}>
-                                             <div className="flex items-center gap-4">
-                                                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
-                                                       <MdShoppingBag />
+                                   {data?.recentOrders?.length > 0 ? (
+                                        data.recentOrders.map((order) => (
+                                             <div key={order._id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => window.location.href = `/admin/orders/${order._id}`}>
+                                                  <div className="flex items-center gap-4">
+                                                       <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                                                            <MdShoppingBag />
+                                                       </div>
+                                                       <div>
+                                                            <p className="text-xs font-bold text-gray-900 leading-tight mb-1">{order.customer?.name || "Guest Check-out"}</p>
+                                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' :
+                                                                 order.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
+                                                                      'bg-blue-50 text-blue-600'
+                                                                 }`}>
+                                                                 {order.status}
+                                                            </span>
+                                                       </div>
                                                   </div>
-                                                  <div>
-                                                       <p className="text-xs font-bold text-gray-900 leading-tight mb-1">{order.customer?.name || "Guest Check-out"}</p>
-                                                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' :
-                                                            order.status === 'Cancelled' ? 'bg-red-50 text-red-600' :
-                                                                 'bg-blue-50 text-blue-600'
-                                                            }`}>
-                                                            {order.status}
-                                                       </span>
+                                                  <div className="text-right">
+                                                       <p className="text-xs font-bold text-gray-900">{settings.currency.symbol}{order.totalAmount.toLocaleString()}</p>
+                                                       <p className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
                                                   </div>
                                              </div>
-                                             <div className="text-right">
-                                                  <p className="text-xs font-bold text-gray-900">{settings.currency.symbol}{order.totalAmount.toLocaleString()}</p>
-                                                  <p className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
-                                             </div>
+                                        ))
+                                   ) : (
+                                        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                                             <MdShoppingCart size={32} className="mb-2 opacity-20" />
+                                             <p className="text-xs">No recent orders</p>
                                         </div>
-                                   ))}
+                                   )}
                               </div>
                          </div>
                     </div>
@@ -213,10 +236,10 @@ export default function DashboardPage() {
                               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Stock Alerts</h3>
                               <Link href="/admin/stockmanagement" className="text-xs font-medium text-primary hover:underline">Manage Stock</Link>
                          </div>
-                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm h-full">
-                              {data?.lowStockProducts.length > 0 ? (
+                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm h-full min-h-[400px]">
+                              {data?.lowStockProducts?.length > 0 ? (
                                    <div className="divide-y divide-gray-50">
-                                        {data?.lowStockProducts.slice(0, 5).map((product) => (
+                                        {data.lowStockProducts.slice(0, 5).map((product) => (
                                              <div key={product._id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
                                                   <div className="flex items-center gap-4">
                                                        <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500 overflow-hidden">
@@ -251,22 +274,29 @@ export default function DashboardPage() {
                          <div className="flex items-center justify-between">
                               <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest pl-1">Top Performers</h3>
                          </div>
-                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm h-full">
+                         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm h-full min-h-[400px]">
                               <div className="divide-y divide-gray-50">
-                                   {data?.topProducts.slice(0, 5).map((product, i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
-                                             <div className="flex items-center gap-4">
-                                                  <span className="text-xs font-bold text-gray-300 w-4">#{i + 1}</span>
-                                                  <div>
-                                                       <p className="text-xs font-medium text-gray-900 leading-tight">{product.name}</p>
-                                                       <p className="text-[10px] text-gray-400">{product.totalSold} sold this month</p>
+                                   {data?.topProducts?.length > 0 ? (
+                                        data.topProducts.slice(0, 5).map((product, i) => (
+                                             <div key={i} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                                                  <div className="flex items-center gap-4">
+                                                       <span className="text-xs font-bold text-gray-300 w-4">#{i + 1}</span>
+                                                       <div>
+                                                            <p className="text-xs font-medium text-gray-900 leading-tight">{product.name}</p>
+                                                            <p className="text-[10px] text-gray-400">{product.totalSold} sold this month</p>
+                                                       </div>
                                                   </div>
+                                                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                                                       {settings.currency.symbol}{product.totalRevenue.toLocaleString()}
+                                                  </span>
                                              </div>
-                                             <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-                                                  {settings.currency.symbol}{product.totalRevenue.toLocaleString()}
-                                             </span>
+                                        ))
+                                   ) : (
+                                        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                                             <MdTrendingUp size={32} className="mb-2 opacity-20" />
+                                             <p className="text-xs">No sales data yet</p>
                                         </div>
-                                   ))}
+                                   )}
                               </div>
                          </div>
                     </div>

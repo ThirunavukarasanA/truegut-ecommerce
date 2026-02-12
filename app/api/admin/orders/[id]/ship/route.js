@@ -11,11 +11,11 @@ export async function POST(req, { params }) {
 
           const order = await Order.findById(id);
           if (!order) {
-               return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+               return NextResponse.json({ error: "Order not found" }, { status: 404 });
           }
 
           if (order.status !== "Processing" && order.status !== "Shipped") {
-               return NextResponse.json({ success: false, error: "Order must be Processing or Shipped to update shipment" }, { status: 400 });
+               return NextResponse.json({ error: "Order must be Processing or Shipped to update shipment" }, { status: 400 });
           }
 
           const deliveryDetails = {
@@ -66,6 +66,6 @@ export async function POST(req, { params }) {
 
      } catch (error) {
           console.error("Ship Order Error:", error);
-          return NextResponse.json({ success: false, error: "Failed to ship order" }, { status: 500 });
+          return NextResponse.json({ error: "Failed to ship order" }, { status: 500 });
      }
 }

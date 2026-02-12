@@ -8,12 +8,23 @@ import mongoose from 'mongoose';
 // Admin: Get all orders with advanced filtering
 export async function GET(req) {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
      mongoose.set('strictPopulate', false);
 
      try {
+          const isVendor = user.role === 'vendor';
+          let vendorId = null;
+          if (isVendor) {
+               const { default: Vendor } = await import('@/models/Vendor');
+               const vendorProfile = await Vendor.findOne({ userId: user._id });
+               vendorId = vendorProfile?._id;
+               if (!vendorId) {
+                    return NextResponse.json({ error: 'Vendor profile not found' }, { status: 404 });
+               }
+          }
+
           const { searchParams } = new URL(req.url);
           const orderId = searchParams.get('orderId');
           const status = searchParams.get('status');
@@ -30,7 +41,7 @@ export async function GET(req) {
 
           if (orderId) {
                if (!mongoose.Types.ObjectId.isValid(orderId)) {
-                    return NextResponse.json({ success: false, error: 'Invalid Order ID format' }, { status: 400 });
+                    return NextResponse.json({ error: 'Invalid Order ID format' }, { status: 400 });
                }
                query._id = orderId;
           }
@@ -43,7 +54,9 @@ export async function GET(req) {
                query.paymentStatus = paymentStatus;
           }
 
-          if (vendor) {
+          if (isVendor) {
+               query.vendor = vendorId;
+          } else if (vendor) {
                query.vendor = vendor;
           }
 
@@ -86,14 +99,14 @@ export async function GET(req) {
                }
           });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
 // Admin: Create manual order
 export async function POST(req) {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
      const session = await mongoose.startSession();
@@ -109,14 +122,12 @@ export async function POST(req) {
           // Validate required fields
           if (!body.customer?.email || !body.customer?.name) {
                return NextResponse.json({
-                    success: false,
                     error: 'Customer information is required'
                }, { status: 400 });
           }
 
           if (!body.items || body.items.length === 0) {
                return NextResponse.json({
-                    success: false,
                     error: 'Order must contain at least one item'
                }, { status: 400 });
           }
@@ -217,14 +228,14 @@ export async function POST(req) {
      } catch (error) {
           await session.abortTransaction();
           session.endSession();
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }
 
 // Admin: Update order (status, payment, tracking, etc.)
 export async function PATCH(req) {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      await dbConnect();
      try {
@@ -234,7 +245,6 @@ export async function PATCH(req) {
 
           if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
                return NextResponse.json({
-                    success: false,
                     error: 'Valid Order ID is required'
                }, { status: 400 });
           }
@@ -243,9 +253,17 @@ export async function PATCH(req) {
 
           if (!order) {
                return NextResponse.json({
-                    success: false,
                     error: 'Order not found'
                }, { status: 404 });
+          }
+
+          // Check permissions for vendor
+          if (user.role === 'vendor') {
+               const { default: Vendor } = await import('@/models/Vendor');
+               const vendorProfile = await Vendor.findOne({ userId: user._id });
+               if (!order.vendor || order.vendor.toString() !== vendorProfile?._id.toString()) {
+                    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+               }
           }
 
           // Update allowed fields
@@ -285,7 +303,7 @@ export async function PATCH(req) {
                message: 'Order updated successfully'
           });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
@@ -305,7 +323,6 @@ export async function DELETE(req) {
 
           if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
                return NextResponse.json({
-                    success: false,
                     error: 'Valid Order ID is required'
                }, { status: 400 });
           }
@@ -313,7 +330,16 @@ export async function DELETE(req) {
           const order = await Order.findById(orderId).session(session);
 
           if (!order) {
-               throw new Error('Order not found');
+               return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+          }
+
+          // Check permissions for vendor
+          if (user.role === 'vendor') {
+               const { default: Vendor } = await import('@/models/Vendor');
+               const vendorProfile = await Vendor.findOne({ userId: user._id });
+               if (!order.vendor || order.vendor.toString() !== vendorProfile?._id.toString()) {
+                    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+               }
           }
 
 
@@ -387,6 +413,6 @@ export async function DELETE(req) {
      } catch (error) {
           await session.abortTransaction();
           session.endSession();
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }

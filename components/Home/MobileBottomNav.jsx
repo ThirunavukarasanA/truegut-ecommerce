@@ -34,9 +34,9 @@ export default function MobileBottomNav() {
             </Link>
 
             <Link
-              href="/admin"
+              href="/login"
               className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 mr-4 ${
-                isActive("/admin")
+                isActive("/login")
                   ? "text-secondary"
                   : "text-gray-400 hover:text-white"
               }`}

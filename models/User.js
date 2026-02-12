@@ -16,13 +16,9 @@ const UserSchema = new mongoose.Schema({
           enum: ['user', 'admin', 'system_admin', 'owner', 'vendor'],
           default: 'user',
      },
-     createdAt: {
-          type: Date,
-          default: Date.now,
-     },
      resetPasswordToken: String,
      resetPasswordExpires: Date,
-});
+}, { timestamps: true });
 
 
 // Method to compare password

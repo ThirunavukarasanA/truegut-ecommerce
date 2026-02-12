@@ -143,7 +143,7 @@ export async function GET(req) {
           });
      } catch (error) {
           console.error("Stock API Error:", error);
-          return NextResponse.json({ success: false, error: "Failed to fetch stock" }, { status: 500 });
+          return NextResponse.json({ error: "Failed to fetch stock" }, { status: 500 });
      }
 }
 
@@ -151,7 +151,7 @@ export async function POST(req) {
      try {
           const user = await getAuthenticatedUser();
           if (!user) {
-               return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+               return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
           }
 
           await dbConnect();
@@ -161,13 +161,13 @@ export async function POST(req) {
 
           // Validation
           if (!product || !variant || !batchNo || !expiryDate || !quantity) {
-               return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+               return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
           }
 
           // Check for duplicate batch No
           const existingBatch = await Batch.findOne({ batchNo });
           if (existingBatch) {
-               return NextResponse.json({ success: false, error: "Batch number already exists" }, { status: 400 });
+               return NextResponse.json({ error: "Batch number already exists" }, { status: 400 });
           }
 
           const batch = await Batch.create({
@@ -183,7 +183,7 @@ export async function POST(req) {
           return NextResponse.json({ success: true, data: batch });
      } catch (error) {
           console.error("Batch Creation Error:", error);
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
@@ -191,7 +191,7 @@ export async function PUT(req) {
      try {
           const user = await getAuthenticatedUser();
           if (!user) {
-               return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+               return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
           }
 
           await dbConnect();
@@ -199,16 +199,16 @@ export async function PUT(req) {
           const { batchId, quantity } = body;
 
           if (!batchId || !quantity) {
-               return NextResponse.json({ success: false, error: "Batch ID and Quantity are required" }, { status: 400 });
+               return NextResponse.json({ error: "Batch ID and Quantity are required" }, { status: 400 });
           }
 
           const batchToCheck = await Batch.findById(batchId);
           if (!batchToCheck) {
-               return NextResponse.json({ success: false, error: "Batch not found" }, { status: 404 });
+               return NextResponse.json({ error: "Batch not found" }, { status: 404 });
           }
 
           if (batchToCheck.status === 'expired') {
-               return NextResponse.json({ success: false, error: "Cannot add stock to expired batch" }, { status: 400 });
+               return NextResponse.json({ error: "Cannot add stock to expired batch" }, { status: 400 });
           }
 
           // Atomic update using $inc

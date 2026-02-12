@@ -5,7 +5,7 @@ import { getAuthenticatedUser } from '@/lib/admin/api-auth';
 
 export async function GET(req, { params }) {
      const user = await getAuthenticatedUser();
-     if (!user) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
      const { id } = await params;
      await dbConnect();
@@ -13,11 +13,20 @@ export async function GET(req, { params }) {
      try {
           const vendor = await Vendor.findById(id);
           if (!vendor) {
-               return NextResponse.json({ success: false, error: 'Vendor not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
           }
+
+          // Check permissions for vendor
+          if (user.role === 'vendor') {
+               // Vendor can only see their own profile
+               if (vendor.userId?.toString() !== user._id.toString()) {
+                    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+               }
+          }
+
           return NextResponse.json({ success: true, data: vendor });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }
 
@@ -38,7 +47,7 @@ export async function PATCH(req, { params }) {
           if (body.email) {
                const existing = await Vendor.findOne({ email: body.email.toLowerCase(), _id: { $ne: id } });
                if (existing) {
-                    return NextResponse.json({ success: false, error: 'Email already in use by another vendor' }, { status: 400 });
+                    return NextResponse.json({ error: 'Email already in use by another vendor' }, { status: 400 });
                }
                body.email = body.email.toLowerCase();
           }
@@ -46,12 +55,12 @@ export async function PATCH(req, { params }) {
           const vendor = await Vendor.findByIdAndUpdate(id, body, { new: true, runValidators: true });
 
           if (!vendor) {
-               return NextResponse.json({ success: false, error: 'Vendor not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
           }
 
           return NextResponse.json({ success: true, data: vendor });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }
 

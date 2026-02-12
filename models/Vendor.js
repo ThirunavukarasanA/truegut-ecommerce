@@ -30,7 +30,7 @@ const VendorSchema = new mongoose.Schema({
           type: Number,
           default: 0,
      },
-     connectedUser: {
+     userId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: 'User'
      },

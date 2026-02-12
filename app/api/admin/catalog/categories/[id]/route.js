@@ -27,19 +27,19 @@ export async function PATCH(req, { params }) {
                     _id: { $ne: id }
                });
                if (exists) {
-                    return NextResponse.json({ success: false, error: 'A category with this name already exists' }, { status: 400 });
+                    return NextResponse.json({ error: 'A category with this name already exists' }, { status: 400 });
                }
           }
 
           const category = await Category.findByIdAndUpdate(id, body, { new: true, runValidators: true });
 
           if (!category) {
-               return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Category not found' }, { status: 404 });
           }
 
           return NextResponse.json({ success: true, data: category });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+          return NextResponse.json({ error: error.message }, { status: 400 });
      }
 }
 
@@ -47,7 +47,7 @@ export async function DELETE(req, { params }) {
      const user = await getAuthenticatedUser();
      const allowedRoles = ['admin', 'system_admin', 'owner'];
      if (!user || !allowedRoles.includes(user.role)) {
-          return NextResponse.json({ success: false, error: 'Unauthorized: Admin access required' }, { status: 401 });
+          return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 401 });
      }
 
      const { id } = await params;
@@ -59,10 +59,10 @@ export async function DELETE(req, { params }) {
 
           const category = await Category.findByIdAndDelete(id);
           if (!category) {
-               return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+               return NextResponse.json({ error: 'Category not found' }, { status: 404 });
           }
           return NextResponse.json({ success: true, message: 'Category deleted successfully' });
      } catch (error) {
-          return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+          return NextResponse.json({ error: error.message }, { status: 500 });
      }
 }

@@ -18,7 +18,7 @@ export async function GET(req, { params }) {
   const user = await getAuthenticatedUser();
   if (!user)
     return NextResponse.json(
-      { success: false, error: "Unauthorized" },
+      { error: "Unauthorized" },
       { status: 401 }
     );
 
@@ -31,7 +31,7 @@ export async function GET(req, { params }) {
     if (!product) {
       ("Product not found");
       return NextResponse.json(
-        { success: false, error: "Product not found" },
+        { error: "Product not found" },
         { status: 404 }
       );
     }
@@ -143,7 +143,7 @@ export async function PATCH(req, { params }) {
       const catExists = await Category.findById(body.category);
       if (!catExists) {
         return NextResponse.json(
-          { success: false, error: "Selected category does not exist" },
+          { error: "Selected category does not exist" },
           { status: 400 }
         );
       }
@@ -163,7 +163,7 @@ export async function PATCH(req, { params }) {
     const currentProduct = await Product.findById(id);
     if (!currentProduct) {
       return NextResponse.json(
-        { success: false, error: "Product not found" },
+        { error: "Product not found" },
         { status: 404 }
       );
     }
@@ -254,7 +254,7 @@ export async function PATCH(req, { params }) {
   } catch (error) {
     console.error("Update Product Error:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { error: error.message },
       { status: 400 }
     );
   }
@@ -277,7 +277,7 @@ export async function DELETE(req, { params }) {
     const product = await Product.findById(id);
     if (!product) {
       return NextResponse.json(
-        { success: false, error: "Product not found" },
+        { error: "Product not found" },
         { status: 404 }
       );
     }
@@ -287,7 +287,6 @@ export async function DELETE(req, { params }) {
     if (orderExists) {
       return NextResponse.json(
         {
-          success: false,
           error: "Cannot delete product. It is referenced in existing orders.",
         },
         { status: 400 }
