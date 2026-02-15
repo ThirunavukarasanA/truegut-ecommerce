@@ -80,7 +80,6 @@ export default function CheckoutPage() {
           }
      }, [pincode, district]);
 
-     // Auto-fill City/State when pincode reaches 6 digits
      useEffect(() => {
           const fetchLocationDetails = async () => {
                if (formData.zipLevel.length === 6) {
@@ -101,6 +100,22 @@ export default function CheckoutPage() {
           };
           fetchLocationDetails();
      }, [formData.zipLevel]);
+
+     const [paymentMethod, setPaymentMethod] = useState('Online');
+
+     const loadRazorpay = () => {
+          return new Promise((resolve) => {
+               const script = document.createElement('script');
+               script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+               script.onload = () => {
+                    resolve(true);
+               };
+               script.onerror = () => {
+                    resolve(false);
+               };
+               document.body.appendChild(script);
+          });
+     };
 
      const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
      const shipping = 0; // Free shipping for now logic
@@ -158,12 +173,12 @@ export default function CheckoutPage() {
                          quantity: item.quantity,
                          price: item.price
                     })),
-                    location: { pincode: formData.zipLevel } // Use form pincode for validation
+                    location: { pincode: formData.zipLevel }
                };
 
                const validateData = await secureFetch("/api/checkout/validate", {
                     method: "POST",
-                    body: validationPayload // secureFetch encrypts this
+                    body: validationPayload
                });
 
                if (!validateData.success || !validateData.isValid) {
@@ -175,17 +190,15 @@ export default function CheckoutPage() {
                          fetchCart();
                     }
                     setLoading(false);
-                    return; // Stop checkout
+                    return;
                }
 
-               // Valid but warnings
                if (validateData.warnings && validateData.warnings.length > 0) {
                     validateData.warnings.forEach(warn => toast(warn, { icon: '⚠️' }));
                }
 
-               // 2. Create Order
-               // Construct payload matching /api/orders expectation
-               const orderPayload = {
+               // Prepare Order Payload Logic
+               const createOrderPayload = (paymentDetails = { method: "COD" }) => ({
                     customer: {
                          name: `${formData.firstName} ${formData.lastName}`.trim(),
                          email: formData.email,
@@ -204,43 +217,131 @@ export default function CheckoutPage() {
                          quantity: item.quantity,
                          price: item.price
                     })),
-                    paymentDetails: {
-                         method: "COD"
-                    },
+                    paymentDetails: paymentDetails,
                     totalAmount: total,
-               };
-
-               const data = await secureFetch("/api/orders", {
-                    method: "POST",
-                    body: orderPayload
                });
 
-               if (data.success) {
-                    toast.success("Order placed successfully!");
-                    router.push(`/`); // Or success page
-                    setFormData({
-                         firstName: "",
-                         lastName: "",
-                         email: "",
-                         phone: "",
-                         address: "",
-                         city: "",
-                         state: "",
-                         zipLevel: "",
-                         country: ""
+
+               if (paymentMethod === 'Online') {
+                    // RAZORPAY FLOW
+                    const res = await loadRazorpay();
+                    if (!res) {
+                         toast.error("Razorpay SDK failed to load. Are you online?");
+                         setLoading(false);
+                         return;
+                    }
+
+                    // Create Order on Backend
+                    const orderData = await secureFetch("/api/payment/razorpay", {
+                         method: "POST",
+                         body: { amount: total }
                     });
 
-                    fetchCart(); // This will fetch empty cart now
+                    if (!orderData || !orderData.id) {
+                         toast.error("Server error. Could not create order.");
+                         setLoading(false);
+                         return;
+                    }
+
+                    const options = {
+                         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                         amount: orderData.amount,
+                         currency: orderData.currency,
+                         name: "Fermentaa/TrueGut",
+                         description: "Order Payment",
+                         image: "/android-chrome-192x192.png", // Or logo path
+                         order_id: orderData.id,
+                         handler: async function (response) {
+                              // Success Handler
+                              try {
+                                   const paymentDetails = {
+                                        method: "Razorpay",
+                                        transactionId: response.razorpay_payment_id,
+                                        // razorpayOrderId: response.razorpay_order_id,
+                                        // razorpaySignature: response.razorpay_signature
+                                   };
+
+                                   // Place Order
+                                   const finalOrderPayload = createOrderPayload(paymentDetails);
+                                   const data = await secureFetch("/api/orders", {
+                                        method: "POST",
+                                        body: finalOrderPayload
+                                   });
+
+                                   if (data.success) {
+                                        toast.success("Order placed successfully!");
+                                        router.push(`/`);
+                                        setFormData({
+                                             firstName: "", lastName: "", email: "", phone: "",
+                                             address: "", city: "", state: "", zipLevel: "", country: ""
+                                        });
+                                        fetchCart();
+                                   } else {
+                                        toast.error(data.error || "Failed to place order after payment. Contact support.");
+                                        setLoading(false);
+                                   }
+                              } catch (err) {
+                                   console.error(err);
+                                   toast.error("Payment successful but failed to create order.");
+                                   setLoading(false);
+                              }
+                         },
+                         prefill: {
+                              name: `${formData.firstName} ${formData.lastName}`,
+                              email: formData.email,
+                              contact: formData.phone,
+                         },
+                         theme: {
+                              color: "#166534", // primary color
+                         },
+                         modal: {
+                              ondismiss: function () {
+                                   setLoading(false);
+                                   toast("Payment cancelled");
+                              }
+                         }
+                    };
+
+                    const paymentObject = new window.Razorpay(options);
+                    paymentObject.open();
+
                } else {
-                    toast.error(data.error || "Failed to place order");
+                    // COD FLOW
+                    const orderPayload = createOrderPayload({ method: "COD" });
+
+                    const data = await secureFetch("/api/orders", {
+                         method: "POST",
+                         body: orderPayload
+                    });
+
+                    if (data.success) {
+                         toast.success("Order placed successfully!");
+                         router.push(`/`);
+                         setFormData({
+                              firstName: "",
+                              lastName: "",
+                              email: "",
+                              phone: "",
+                              address: "",
+                              city: "",
+                              state: "",
+                              zipLevel: "",
+                              country: ""
+                         });
+
+                         fetchCart();
+                    } else {
+                         toast.error(data.error || "Failed to place order");
+                    }
+                    setLoading(false);
                }
 
           } catch (error) {
                console.error(error);
                toast.error("Something went wrong");
-          } finally {
                setLoading(false);
           }
+          // Note: Loading state is handled inside blocks or ondismiss for Razorpay
      };
 
      if (cartItems.length === 0) {
@@ -281,14 +382,13 @@ export default function CheckoutPage() {
                                                   <MdLogin size={18} />
                                                   Login
                                              </Link>
-                                             <button
-                                                  type="button"
-                                                  onClick={() => toast.error("Google login needs configuration")}
+                                             <Link
+                                                  href="/login?redirect=/checkout"
                                                   className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 border border-gray-200 rounded-lg font-bold text-sm hover:bg-gray-50 transition-colors"
                                              >
                                                   <FcGoogle size={18} />
                                                   Google
-                                             </button>
+                                             </Link>
                                         </div>
                                    </div>
                               )}
@@ -339,11 +439,39 @@ export default function CheckoutPage() {
 
                                    <div className="mt-6 pt-6 border-t border-gray-100">
                                         <h3 className="font-bold text-gray-800 mb-4">Payment</h3>
-                                        <div className="flex items-center gap-3 p-4 border border-primary bg-primary/5 rounded-lg">
-                                             <input type="radio" checked className="text-primary" readOnly />
+
+                                        <div
+                                             className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all mb-3 ${paymentMethod === 'COD' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}
+                                             onClick={() => setPaymentMethod('COD')}
+                                        >
+                                             <input
+                                                  type="radio"
+                                                  name="paymentMethod"
+                                                  value="COD"
+                                                  checked={paymentMethod === 'COD'}
+                                                  onChange={() => setPaymentMethod('COD')}
+                                                  className="text-primary focus:ring-primary"
+                                             />
                                              <span className="font-medium">Cash on Delivery (COD)</span>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-2">Online payment gateway coming soon.</p>
+
+                                        <div
+                                             className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-all ${paymentMethod === 'Online' ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}`}
+                                             onClick={() => setPaymentMethod('Online')}
+                                        >
+                                             <input
+                                                  type="radio"
+                                                  name="paymentMethod"
+                                                  value="Online"
+                                                  checked={paymentMethod === 'Online'}
+                                                  onChange={() => setPaymentMethod('Online')}
+                                                  className="text-primary focus:ring-primary"
+                                             />
+                                             <div>
+                                                  <span className="font-medium block">Pay via Razorpay</span>
+                                                  <span className="text-xs text-gray-500">UPI, Cards, NetBanking</span>
+                                             </div>
+                                        </div>
                                    </div>
 
                                    <button

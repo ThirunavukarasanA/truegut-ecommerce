@@ -21,11 +21,10 @@ export default function MobileBottomNav() {
             {/* Left Side */}
             <Link
               href="/collections"
-              className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 ${
-                isActive("/collections")
-                  ? "text-secondary"
-                  : "text-white hover:text-secondary"
-              }`}
+              className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 ${isActive("/collections")
+                ? "text-secondary"
+                : "text-white hover:text-secondary"
+                }`}
             >
               <BiStore size={22} />
               <span className="text-[9px] font-bold uppercase tracking-wider">
@@ -34,12 +33,11 @@ export default function MobileBottomNav() {
             </Link>
 
             <Link
-              href="/login"
-              className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 mr-4 ${
-                isActive("/login")
-                  ? "text-secondary"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              href="/account"
+              className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 mr-4 ${isActive("/account")
+                ? "text-secondary"
+                : "text-gray-400 hover:text-white"
+                }`}
             >
               <BiUser size={22} />
               <span className="text-[9px] font-bold uppercase tracking-wider">
@@ -55,11 +53,10 @@ export default function MobileBottomNav() {
                 {/* Use Link or Button for the central action */}
                 <Link
                   href="/dna-test"
-                  className={`relative flex items-center justify-center w-16 h-16 rounded-full shadow-lg text-white hover:scale-105 transition-transform ${
-                    isActive("/dna-test")
-                      ? "bg-secondary scale-105"
-                      : "bg-secondary"
-                  }`}
+                  className={`relative flex items-center justify-center w-16 h-16 rounded-full shadow-lg text-white hover:scale-105 transition-transform ${isActive("/dna-test")
+                    ? "bg-secondary scale-105"
+                    : "bg-secondary"
+                    }`}
                 >
                   <FaDna size={28} />
                 </Link>
@@ -69,11 +66,10 @@ export default function MobileBottomNav() {
             {/* Right Side */}
             <Link
               href="/track"
-              className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 ml-4 ${
-                isActive("/track")
-                  ? "text-secondary"
-                  : "text-gray-400 hover:text-white"
-              }`}
+              className={`flex flex-col items-center justify-center w-14 transition-colors gap-1 ml-4 ${isActive("/track")
+                ? "text-secondary"
+                : "text-gray-400 hover:text-white"
+                }`}
             >
               <FaShippingFast size={22} />
               <span className="text-[9px] font-bold uppercase tracking-wider">

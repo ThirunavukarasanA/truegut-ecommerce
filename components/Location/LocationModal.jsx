@@ -28,6 +28,19 @@ export default function LocationModal() {
     }
   }, [isModalOpen, isLocationSet]);
 
+  // Scroll Lock: Prevent background scrolling when modal is open
+  useEffect(() => {
+    const shouldShow = (!isLocationSet || isModalOpen) && isLoaded;
+    if (shouldShow) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isLocationSet, isModalOpen, isLoaded]);
+
   // Automatically fetch post offices when pincode reaches 6 digits
   useEffect(() => {
     if (pincode.length === 6) {
@@ -141,9 +154,9 @@ export default function LocationModal() {
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
       >
-        <div className="bg-primary p-6 text-white relative">
+        <div className="bg-primary p-6 text-white relative rounded-t-2xl">
           {isLocationSet && (
             <button
               onClick={closeModal}
@@ -238,19 +251,17 @@ export default function LocationModal() {
                                   setSelectedPO(po);
                                   setIsDropdownOpen(false); // Changed from setIsOpen to setIsDropdownOpen
                                 }}
-                                className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-primary/5 ${
-                                  selectedPO === po
-                                    ? "bg-primary/10 text-primary font-medium"
-                                    : "text-gray-700"
-                                }`}
+                                className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-primary/5 ${selectedPO === po
+                                  ? "bg-primary/10 text-primary font-medium"
+                                  : "text-gray-700"
+                                  }`}
                               >
                                 <div className="flex items-center gap-3">
                                   <div
-                                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                                      selectedPO === po
-                                        ? "bg-primary text-white"
-                                        : "bg-gray-100 text-gray-500"
-                                    }`}
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full ${selectedPO === po
+                                      ? "bg-primary text-white"
+                                      : "bg-gray-100 text-gray-500"
+                                      }`}
                                   >
                                     <FiMapPin className="h-4 w-4" />
                                   </div>
@@ -287,7 +298,7 @@ export default function LocationModal() {
           </AnimatePresence>
         </div>
 
-        <div className="bg-gray-50 px-8 py-4 text-center text-xs text-gray-500">
+        <div className="bg-gray-50 px-8 py-4 text-center text-xs text-gray-500 rounded-b-2xl">
           We need your location to ensure fresh delivery from the nearest
           vendor.
         </div>

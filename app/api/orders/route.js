@@ -226,6 +226,13 @@ export async function POST(req) {
           try {
                const { cookies } = await import("next/headers");
                const { default: TempCart } = await import('@/models/TempCart');
+               const { default: Cart } = await import('@/models/Cart'); // Import Cart model
+
+               // Clear User Cart if logged in (customerId is present)
+               if (customerId) {
+                    await Cart.findOneAndDelete({ customerId: customerId });
+               }
+
                const cookieStore = await cookies();
                const sessionId = cookieStore.get("cart_session_id")?.value;
                if (sessionId) {
@@ -233,7 +240,7 @@ export async function POST(req) {
                     await TempCustomer.deleteOne({ sessionId });
                }
           } catch (cartError) {
-               console.error("Failed to clear temp data:", cartError);
+               console.error("Failed to clear temp/user data:", cartError);
           }
 
           // Send Email (Async)

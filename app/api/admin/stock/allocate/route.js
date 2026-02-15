@@ -57,14 +57,22 @@ export async function POST(req) {
           batch.quantity -= quantity;
           await batch.save();
 
-          // ALWAYS Create New Vendor Stock Record (No Upsert)
-          await VendorStock.create({
-               vendor: vendorId,
-               batch: batchId,
-               product: batch.product,
-               variant: batch.variant,
-               quantity: parseInt(quantity)
-          });
+          // Upsert Vendor Stock: Increment if existing, Create if new
+          await VendorStock.findOneAndUpdate(
+               {
+                    vendor: vendorId,
+                    batch: batchId,
+                    variant: batch.variant
+               },
+               {
+                    $inc: { quantity: parseInt(quantity) },
+                    $set: {
+                         product: batch.product,
+                         receivedAt: new Date()
+                    }
+               },
+               { upsert: true, new: true }
+          );
 
           return NextResponse.json({ success: true, message: 'Stock allocated successfully' });
 
