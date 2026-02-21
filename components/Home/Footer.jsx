@@ -6,6 +6,7 @@ import {
   FaGoogle,
   FaEnvelope,
 } from "react-icons/fa";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -13,7 +14,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         {/* Brand */}
         <div className="space-y-6">
-          <h3 className="font-bold text-primary text-xl">True<span className="text-secondary">gut</span></h3>
+          <h3 className="font-bold text-primary text-xl">
+            True<span className="text-secondary">gut</span>
+          </h3>
           <p className="text-gray-500 text-sm leading-relaxed">
             There are many variations of passages of Lorem Ipsum available, but
             the majority have suffered alteration in some.
@@ -57,7 +60,7 @@ export default function Footer() {
           <h4 className="font-bold text-primary text-sm mb-6">Categories</h4>
           <ul className="space-y-4 text-gray-500 text-sm">
             <li className="hover:text-secondary cursor-pointer transition-colors">
-              Kelif
+              kefir
             </li>
             <li className="hover:text-secondary cursor-pointer transition-colors">
               Kombucha
@@ -75,11 +78,11 @@ export default function Footer() {
             <li className="hover:text-secondary cursor-pointer transition-colors">
               My cart
             </li>
-            <li className="hover:text-secondary cursor-pointer transition-colors">
+            {/* <li className="hover:text-secondary cursor-pointer transition-colors">
               Wishlist
-            </li>
+            </li> */}
             <li className="hover:text-secondary cursor-pointer transition-colors">
-              Sign in
+              <Link href="/login">Sign in</Link>
             </li>
             <li className="hover:text-secondary cursor-pointer transition-colors">
               Shipping details
@@ -90,15 +93,37 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Blank/Placeholder for balance or extra Links */}
+        {/* Quick Links */}
         <div>
-          {/* Can add another column here if needed, or leave blank to match design's 4 columns where 4th might be empty or combined */}
+          <h4 className="font-bold text-primary text-sm mb-6">Quick Links</h4>
+          <ul className="space-y-4 text-gray-500 text-sm">
+            <li className="hover:text-secondary cursor-pointer transition-colors">
+              <Link href="/about">About Us</Link>
+            </li>
+            <li className="hover:text-secondary cursor-pointer transition-colors">
+              <Link href="/contact">Contact</Link>
+            </li>
+            <li className="hover:text-secondary cursor-pointer transition-colors">
+              <Link href="/blogs">Blog</Link>
+            </li>
+            <li className="hover:text-secondary cursor-pointer transition-colors">
+              <Link href="/privacy-policy">Privacy Policy</Link>
+            </li>
+          </ul>
         </div>
       </div>
 
       {/* Copyright */}
-      <div className="border-t border-gray-200 pt-8 text-center">
-        <p className="text-gray-400 text-xs">Copywrite © 2025 by TrueGut</p>
+      <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row items-center justify-between gap-3">
+        <p className="text-gray-400 text-xs">
+          Copyright © 2025 by TrueGut. All rights reserved.
+        </p>
+        <Link
+          href="/privacy-policy"
+          className="text-gray-400 text-xs hover:text-secondary transition-colors"
+        >
+          Privacy Policy
+        </Link>
       </div>
     </footer>
   );
