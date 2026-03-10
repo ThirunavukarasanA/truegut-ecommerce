@@ -96,8 +96,16 @@ const OrderSchema = new mongoose.Schema(
 
       // Shiprocket specific
       shiprocketOrderId: String,
+      shiprocketShipmentId: String,
       shipmentId: String,
       awbCode: String,
+
+      // Package dimensions (used for Shiprocket)
+      weight: String,
+      length: String,
+      breadth: String,
+      height: String,
+      pickupLocation: String,
 
       shippedAt: Date,
       deliveredAt: Date,

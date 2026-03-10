@@ -54,16 +54,39 @@ export async function GET(req) {
 
     if (cart) {
       const { default: Batch } = await import("@/models/Batch");
+      const { default: VendorStock } = await import("@/models/VendorStock");
+      const vendorId = req.headers.get("x-vendor-id");
+
       const itemsWithStock = await Promise.all(
         cart.items.map(async (item) => {
           if (!item.variantId) return item;
-          const batches = await Batch.find({
-            variant: item.variantId._id,
-            status: "active",
-            expiryDate: { $gt: new Date() },
-            quantity: { $gt: 0 },
-          });
-          const stock = batches.reduce((sum, b) => sum + b.quantity, 0);
+
+          let stock = 0;
+          const now = new Date();
+
+          if (vendorId) {
+            const vendorStocks = await VendorStock.find({
+              vendor: vendorId,
+              variant: item.variantId._id,
+              quantity: { $gt: 0 }
+            }).populate('batch');
+
+            stock = vendorStocks.reduce((sum, vs) => {
+              if (vs.batch && vs.batch.expiryDate > now && vs.batch.status === 'active') {
+                return sum + vs.quantity;
+              }
+              return sum;
+            }, 0);
+          } else {
+            const batches = await Batch.find({
+              variant: item.variantId._id,
+              status: "active",
+              expiryDate: { $gt: now },
+              quantity: { $gt: 0 },
+            });
+            stock = batches.reduce((sum, b) => sum + b.quantity, 0);
+          }
+
           const itemObj = item.toObject ? item.toObject() : item;
           return { ...itemObj, stock };
         })
@@ -155,9 +178,7 @@ export async function POST(req) {
     }
 
     let finalQuantity = quantity || 1;
-    if (existingItemIndex > -1) {
-      finalQuantity += cart.items[existingItemIndex].quantity;
-    }
+    // Setting absolute quantity instead of incrementing as per user request.
 
     if (finalQuantity > totalAvailable) {
       const errorData = {

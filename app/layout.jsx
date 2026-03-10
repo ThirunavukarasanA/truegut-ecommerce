@@ -20,7 +20,6 @@ export const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 
-import LocationModalProxy from "../components/Location/LocationModalProxy";
 
 export default function RootLayout({ children }) {
   return (
@@ -29,7 +28,6 @@ export default function RootLayout({ children }) {
         className={`${poppins.variable} ${plusJakartaSans.variable} antialiased`}
       >
         <Providers googleClientId={process.env.GOOGLE_CLIENT_ID}>
-          <LocationModalProxy />
           {children}
           <Toaster
             position="top-right"

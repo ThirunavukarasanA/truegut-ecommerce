@@ -140,7 +140,6 @@ export default function UserLogin() {
               onError={() => {
                 toast.error("Google Login Failed");
               }}
-              useOneTap
               theme="outline"
               size="large"
               shape="circle"

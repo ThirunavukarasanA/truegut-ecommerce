@@ -15,6 +15,7 @@ export function LocationProvider({ children }) {
           postOffice: "",
           vendorId: null,
           vendorName: "",
+          isServiceable: false,
      });
      const [isLoaded, setIsLoaded] = useState(false);
      const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,7 +34,11 @@ export function LocationProvider({ children }) {
                     if (data && data.success) {
                          const tempCustomer = data;
                          if (tempCustomer && tempCustomer.location) {
-                              setLocation(prev => ({ ...prev, ...tempCustomer.location }));
+                              setLocation(prev => ({
+                                   ...prev,
+                                   ...tempCustomer.location,
+                                   isServiceable: !!tempCustomer.location.pincode // If pincode exists on server, it was previously serviceable
+                              }));
                          }
                     }
                } catch (e) {
@@ -49,13 +54,19 @@ export function LocationProvider({ children }) {
      const updateLocation = async (newLocation) => {
           if (isAdmin) return;
 
+          // Stability Guard: Don't update if data is identical to current state
+          const isChanged = Object.keys(newLocation).some(key => newLocation[key] !== location[key]);
+          if (!isChanged) return;
+
           // Optimistic update
           setLocation(prev => ({ ...prev, ...newLocation }));
 
+          // Only sync to server if we have a pincode OR we are explicitly clearing (via clearLocation)
+          // Actually, updateLocation is for partials. Let's just avoid redundant POSTs.
           try {
                await secureFetch("/api/temp-customer", {
                     method: "POST",
-                    body: { location: newLocation }
+                    body: { location: { ...location, ...newLocation } } // Send full updated location
                });
           } catch (e) {
                console.error("Failed to sync location", e);
@@ -66,7 +77,7 @@ export function LocationProvider({ children }) {
      const clearLocation = async () => {
           if (isAdmin) return;
 
-          const emptyLocation = { pincode: "", postOffice: "", vendorId: null, vendorName: "" };
+          const emptyLocation = { pincode: "", postOffice: "", vendorId: null, vendorName: "", isServiceable: false };
           setLocation(emptyLocation);
           try {
                // We send empty location to clear it on server

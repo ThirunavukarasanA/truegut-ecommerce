@@ -33,16 +33,39 @@ export async function GET(req) {
 
     if (cart) {
       const { default: Batch } = await import("@/models/Batch");
+      const { default: VendorStock } = await import("@/models/VendorStock");
+      const vendorId = req.headers.get("x-vendor-id");
+
       const itemsWithStock = await Promise.all(
         cart.items.map(async (item) => {
           if (!item.variantId) return item;
-          const batches = await Batch.find({
-            variant: item.variantId._id,
-            status: "active",
-            expiryDate: { $gt: new Date() },
-            quantity: { $gt: 0 },
-          });
-          const stock = batches.reduce((sum, b) => sum + b.quantity, 0);
+
+          let stock = 0;
+          const now = new Date();
+
+          if (vendorId) {
+            const vendorStocks = await VendorStock.find({
+              vendor: vendorId,
+              variant: item.variantId._id,
+              quantity: { $gt: 0 }
+            }).populate('batch');
+
+            stock = vendorStocks.reduce((sum, vs) => {
+              if (vs.batch && vs.batch.expiryDate > now && vs.batch.status === 'active') {
+                return sum + vs.quantity;
+              }
+              return sum;
+            }, 0);
+          } else {
+            const batches = await Batch.find({
+              variant: item.variantId._id,
+              status: "active",
+              expiryDate: { $gt: now },
+              quantity: { $gt: 0 },
+            });
+            stock = batches.reduce((sum, b) => sum + b.quantity, 0);
+          }
+
           const itemObj = item.toObject ? item.toObject() : item;
           return { ...itemObj, stock };
         })
@@ -80,7 +103,9 @@ export async function POST(req) {
     );
 
     // Stock Validation Logic
-    const { default: Batch } = await import("@/models/Batch");
+    const vendorId = req.headers.get("x-vendor-id");
+    const now = new Date();
+    let totalAvailable = 0;
 
     let targetVariantId = variantId;
 
@@ -96,18 +121,35 @@ export async function POST(req) {
       }
     }
 
-    const batches = await Batch.find({
-      variant: targetVariantId,
-      status: "active",
-      expiryDate: { $gt: new Date() },
-      quantity: { $gt: 0 },
-    });
-    const totalAvailable = batches.reduce((sum, b) => sum + b.quantity, 0);
+    if (vendorId) {
+      const { default: VendorStock } = await import("@/models/VendorStock");
+      const vendorStocks = await VendorStock.find({
+        vendor: vendorId,
+        variant: targetVariantId,
+        quantity: { $gt: 0 }
+      }).populate('batch');
+
+      totalAvailable = vendorStocks.reduce((sum, vs) => {
+        if (vs.batch && vs.batch.expiryDate > now && vs.batch.status === 'active') {
+          return sum + vs.quantity;
+        }
+        return sum;
+      }, 0);
+    } else {
+      const { default: Batch } = await import("@/models/Batch");
+      const batches = await Batch.find({
+        variant: targetVariantId,
+        status: "active",
+        expiryDate: { $gt: now },
+        quantity: { $gt: 0 },
+      });
+      totalAvailable = batches.reduce((sum, b) => sum + b.quantity, 0);
+    }
 
     let finalQuantity = quantity || 1;
-    if (existingItemIndex > -1) {
-      finalQuantity += cart.items[existingItemIndex].quantity;
-    }
+    // Removed: if (existingItemIndex > -1) { finalQuantity += ... }
+    // As per user request: "dont use alert in check time... clicking add to cart automatically increase qty, stop that process"
+    // Setting absolute quantity instead.
 
     if (finalQuantity > totalAvailable) {
       return NextResponse.json(
@@ -161,22 +203,38 @@ export async function PUT(req) {
       if (quantity <= 0) {
         cart.items.splice(itemIndex, 1);
       } else {
-        // Stock Validation for Update
-        const { default: Batch } = await import("@/models/Batch");
-        const item = cart.items[itemIndex];
-        const vId = item.variantId || variantId;
-
         if (vId) {
-          const batches = await Batch.find({
-            variant: vId,
-            status: "active",
-            expiryDate: { $gt: new Date() },
-            quantity: { $gt: 0 },
-          });
-          const totalAvailable = batches.reduce(
-            (sum, b) => sum + b.quantity,
-            0
-          );
+          const vendorId = req.headers.get("x-vendor-id");
+          const now = new Date();
+          let totalAvailable = 0;
+
+          if (vendorId) {
+            const { default: VendorStock } = await import("@/models/VendorStock");
+            const vendorStocks = await VendorStock.find({
+              vendor: vendorId,
+              variant: vId,
+              quantity: { $gt: 0 }
+            }).populate('batch');
+
+            totalAvailable = vendorStocks.reduce((sum, vs) => {
+              if (vs.batch && vs.batch.expiryDate > now && vs.batch.status === 'active') {
+                return sum + vs.quantity;
+              }
+              return sum;
+            }, 0);
+          } else {
+            const { default: Batch } = await import("@/models/Batch");
+            const batches = await Batch.find({
+              variant: vId,
+              status: "active",
+              expiryDate: { $gt: now },
+              quantity: { $gt: 0 },
+            });
+            totalAvailable = batches.reduce(
+              (sum, b) => sum + b.quantity,
+              0
+            );
+          }
 
           if (quantity > totalAvailable) {
             return NextResponse.json(

@@ -1,11 +1,14 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FiX, FiShoppingBag, FiTrash2, FiMinus, FiPlus } from "react-icons/fi";
+import { FiX, FiShoppingBag, FiTrash2, FiMinus, FiPlus, FiMapPin } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
+import { useLocation } from "../../context/LocationContext";
+import { toast } from "react-hot-toast";
 
 export default function CartDrawer() {
   const { isCartOpen, closeCart, cartItems, removeFromCart, updateItemQuantity } = useCart();
+  const { pincode, district } = useLocation();
   // Disable body scroll when cart is open
   useEffect(() => {
     if (isCartOpen) {
@@ -43,9 +46,17 @@ export default function CartDrawer() {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-bg-color">
-            <h2 className="text-lg font-bold text-font-title">
-              Your Shopping Bag ({cartItems.length})
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-font-title">
+                Your Shopping Bag ({cartItems.length})
+              </h2>
+              {pincode && (
+                <div className="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-primary uppercase tracking-wider">
+                  <FiMapPin size={10} />
+                  <span>Deliver to {pincode} {district ? `(${district})` : ""}</span>
+                </div>
+              )}
+            </div>
             <button
               onClick={closeCart}
               className="text-gray-500 hover:text-primary transition-colors"
@@ -85,6 +96,13 @@ export default function CartDrawer() {
                       </h3>
                       {item.variantId && (
                         <p className="text-xs text-gray-400 mb-1">Variant: {item.name?.includes("Variant") ? item.name : item.variantName || "Standard"}</p>
+                      )}
+
+                      {item.stock !== undefined && item.stock <= 0 && (
+                        <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight mt-1">Currently Out of Stock at your location</p>
+                      )}
+                      {item.stock !== undefined && item.stock > 0 && item.stock <= 5 && (
+                        <p className="text-[10px] font-bold text-orange-500 uppercase tracking-tight mt-1">Only {item.stock} left in stock</p>
                       )}
 
                       <div className="flex justify-between items-center mt-2">
@@ -140,11 +158,21 @@ export default function CartDrawer() {
                 </span>
               </div>
               <Link
-                href="/checkout"
-                onClick={closeCart}
-                className="block w-full bg-primary text-white text-center py-3 rounded-sm font-bold hover:bg-opacity-90 transition-opacity mb-2"
+                href={cartItems.some(item => item.stock <= 0) ? "#" : "/checkout"}
+                onClick={(e) => {
+                  if (cartItems.some(item => item.stock <= 0)) {
+                    e.preventDefault();
+                    toast.error("Please remove out-of-stock items before checkout.");
+                  } else {
+                    closeCart();
+                  }
+                }}
+                className={`block w-full text-center py-3 rounded-sm font-bold transition-all mb-2 ${cartItems.some(item => item.stock <= 0)
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-primary text-white hover:bg-opacity-90"
+                  }`}
               >
-                CHECKOUT
+                {cartItems.some(item => item.stock <= 0) ? "STOCK UNAVAILABLE" : "CHECKOUT"}
               </Link>
               <Link
                 href="/cart"

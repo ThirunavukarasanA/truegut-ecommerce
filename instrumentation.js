@@ -11,9 +11,13 @@ export async function register() {
                await mongoose.connect(process.env.MONGODB_URI);
           }
 
-          cron.schedule('*/10 * * * * *', async () => {
+          cron.schedule('*/30 * * * * *', async () => {
+               console.log('[Cron] Checking for pending jobs...');
                try {
-                    await processNextPendingJob();
+                    const result = await processNextPendingJob();
+                    if (result?.job) {
+                         console.log(`[Cron] Started job: ${result.job._id}`);
+                    }
                } catch (error) {
                     console.error('[Cron] Error processing job:', error);
                }

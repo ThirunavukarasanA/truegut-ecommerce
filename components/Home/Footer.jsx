@@ -60,7 +60,7 @@ export default function Footer() {
           <h4 className="font-bold text-primary text-sm mb-6">Categories</h4>
           <ul className="space-y-4 text-gray-500 text-sm">
             <li className="hover:text-secondary cursor-pointer transition-colors">
-              kefir
+              Kefir
             </li>
             <li className="hover:text-secondary cursor-pointer transition-colors">
               Kombucha

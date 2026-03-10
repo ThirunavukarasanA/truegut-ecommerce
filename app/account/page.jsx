@@ -5,163 +5,103 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Home/Navbar";
 import Footer from "@/components/Home/Footer";
+import OrderHistory from "@/components/Account/OrderHistory";
+import AccountDetails from "@/components/Account/AccountDetails";
+import { useAccountData } from "@/hooks/useAccountData";
 
 export default function AccountPage() {
-     const { user, logout, loading } = useAuth();
+     const { user, logout, loading: authLoading } = useAuth();
      const router = useRouter();
-     const [orders, setOrders] = React.useState([]);
-     const [ordersLoading, setOrdersLoading] = React.useState(true);
-     useEffect(() => {
-          const fetchOrders = async () => {
-               if (user?.email) {
-                    try {
-                         const res = await fetch(`/api/orders?email=${user.email}`);
-                         const data = await res.json();
-                         if (data.success) {
-                              setOrders(data.data);
-                         }
-                    } catch (error) {
-                         console.error("Failed to fetch orders", error);
-                    } finally {
-                         setOrdersLoading(false);
-                    }
-               }
-          };
-          if (user) {
-               fetchOrders();
-          }
-     }, [user]);
 
-     if (loading || !user) {
+     // Safety fallback to prevent stuck loader in edge cases
+     const [isAuthTimeout, setIsAuthTimeout] = React.useState(false);
+
+     // Custom hook to manage account data (orders, etc.)
+     const { orders, loading: ordersLoading } = useAccountData(user);
+
+     useEffect(() => {
+          const timer = setTimeout(() => {
+               if (authLoading) setIsAuthTimeout(true);
+          }, 5000); // 5 second timeout
+          return () => clearTimeout(timer);
+     }, [authLoading]);
+
+     // Fix: Redirect to login if user is not authenticated after loading
+     useEffect(() => {
+          if ((!authLoading || isAuthTimeout) && !user) {
+               router.replace("/login"); // Use replace for auth redirects
+          }
+     }, [user, authLoading, router, isAuthTimeout]);
+
+     // While checking auth, show premium loader (unless timeout hit)
+     if (authLoading && !isAuthTimeout) {
           return (
-               <div className="min-h-screen flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
+               <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div className="flex flex-col items-center gap-4">
+                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary border-r-2 border-primary/30"></div>
+                         <p className="text-gray-400 font-medium animate-pulse text-sm">Verifying your identity...</p>
+                    </div>
                </div>
           );
      }
 
+     // If redirected (or not authenticated), prevent flickering of account page
+     if (!user) {
+          return null;
+     }
+
      return (
-          <div className="min-h-screen flex flex-col font-sans bg-gray-50">
+          <div className="min-h-screen flex flex-col font-sans bg-gray-50/50">
                <Navbar />
-               <main className="flex-1 max-w-7xl mx-auto px-4 py-20 w-full">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-                         <div className="pt-10">
-                              <h1 className="text-3xl font-bold text-font-title">My Account</h1>
-                              <p className="text-gray-500">Welcome back, {user.name || user.email}</p>
+
+               <main className="flex-1 max-w-7xl mx-auto px-4 py-20 w-full animate-fadeIn">
+                    {/* Header Section */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-8 pt-10 border-b border-gray-100 pb-10">
+                         <div className="space-y-2">
+                              <h1 className="text-4xl md:text-5xl font-black text-font-title tracking-tight italic">My Account</h1>
+                              <p className="text-gray-400 font-medium text-lg flex items-center gap-2">
+                                   Welcome back, <span className="text-primary font-bold">{user.name?.split(' ')[0] || user.email.split('@')[0]}</span>
+                                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                              </p>
                          </div>
                          <button
                               onClick={logout}
-                              className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-600 hover:text-red-500 hover:border-red-500 transition-colors"
+                              className="px-8 py-3 bg-white border border-gray-200 rounded-2xl text-sm font-bold text-gray-600 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50/30 transition-all shadow-sm active:scale-95 flex items-center gap-2 group"
                          >
+                              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1h3a2 2 0 012 2v3a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2h3a2 2 0 012 2v1" />
+                              </svg>
                               Log Out
                          </button>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                         {/* Orders Section */}
-                         <div className="lg:col-span-2 space-y-8">
-                              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-                                   <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-xl font-bold text-font-title">Order History</h2>
-                                        <span className="text-xs font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-wider">
-                                             Total {orders.length} Orders
-                                        </span>
-                                   </div>
-
-                                   {ordersLoading ? (
-                                        <div className="flex justify-center py-12">
-                                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
-                                        </div>
-                                   ) : orders.length > 0 ? (
-                                        <div className="space-y-6">
-                                             {orders.map((order, index) => (
-                                                  <div key={order._id} className="border border-gray-100 rounded-2xl p-6 hover:shadow-md transition-shadow relative overflow-hidden group">
-                                                       {/* Serial Number Badge */}
-                                                       <div className="absolute top-0 left-0 bg-gray-50 text-gray-400 text-[10px] px-3 py-1 rounded-br-xl font-bold border-r border-b border-gray-100 group-hover:bg-primary/5 group-hover:text-primary/60 transition-colors">
-                                                            S.No. {index + 1}
-                                                       </div>
-
-                                                       <div className="flex flex-wrap justify-between items-start gap-y-6 gap-x-4 mb-6 border-b border-gray-50 pb-6 pt-2">
-                                                            <div className="min-w-[120px]">
-                                                                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Order ID</p>
-                                                                 <p className="font-mono font-bold text-gray-800 text-sm">#{order._id.slice(-6).toUpperCase()}</p>
-                                                            </div>
-                                                            <div className="min-w-[100px]">
-                                                                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Placed On</p>
-                                                                 <p className="text-gray-800 font-semibold text-sm">{new Date(order.createdAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                                                            </div>
-                                                            <div className="min-w-[120px]">
-                                                                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Payment Method</p>
-                                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter border ${order.paymentDetails?.method === 'COD'
-                                                                           ? 'bg-amber-50 text-amber-700 border-amber-100'
-                                                                           : 'bg-blue-50 text-blue-700 border-blue-100'
-                                                                      }`}>
-                                                                      {order.paymentDetails?.method === 'COD' ? 'Cash on Delivery' : 'Online (Razorpay)'}
-                                                                 </span>
-                                                            </div>
-                                                            <div className="min-w-[80px]">
-                                                                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Total Amount</p>
-                                                                 <p className="text-primary font-black text-base">₹{order.totalAmount}</p>
-                                                            </div>
-                                                            <div>
-                                                                 <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1">Status</p>
-                                                                 <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' :
-                                                                           order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' :
-                                                                                'bg-sky-100 text-sky-700'
-                                                                      }`}>
-                                                                      {order.status}
-                                                                 </span>
-                                                            </div>
-                                                       </div>
-
-                                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            {order.items.map((item, idx) => (
-                                                                 <div key={idx} className="flex gap-4 items-center bg-gray-50/50 p-3 rounded-xl border border-transparent hover:border-gray-100 hover:bg-white transition-all">
-                                                                      <div className="h-14 w-14 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-50 overflow-hidden shrink-0">
-                                                                           {item.product?.images?.[0]?.url ? (
-                                                                                <img src={item.product.images[0].url} alt={item.productSnapshot?.name} className="h-full w-full object-cover" />
-                                                                           ) : (
-                                                                                <div className="text-[10px] text-gray-300 font-bold">FE</div>
-                                                                           )}
-                                                                      </div>
-                                                                      <div className="flex-1 min-w-0">
-                                                                           <p className="text-sm font-bold text-gray-800 truncate">{item.productSnapshot?.name || "Product"}</p>
-                                                                           <div className="flex items-center gap-2 mt-0.5">
-                                                                                <span className="text-[10px] text-gray-500 font-medium">{item.productSnapshot?.variantName}</span>
-                                                                                <span className="text-[10px] text-gray-300">•</span>
-                                                                                <span className="text-[10px] font-bold text-primary">Qty: {item.quantity}</span>
-                                                                           </div>
-                                                                      </div>
-                                                                 </div>
-                                                            ))}
-                                                       </div>
-                                                  </div>
-                                             ))}
-                                        </div>
-                                   ) : (
-                                        <div className="text-center py-12 text-gray-400">
-                                             <p>No orders yet.</p>
-                                             <p className="text-sm mt-2">Start shopping to see your orders here.</p>
-                                        </div>
-                                   )}
-
-                              </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                         {/* Left/Middle Column: Order History */}
+                         <div className="lg:col-span-2">
+                              <OrderHistory
+                                   orders={orders}
+                                   loading={ordersLoading}
+                              />
                          </div>
 
-                         {/* Address / Profile Section */}
-                         <div className="space-y-8">
-                              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-                                   <h2 className="text-xl font-bold text-font-title mb-6">Account Details</h2>
-                                   <div className="space-y-2 text-gray-600">
-                                        <p className="font-bold text-gray-800">{user.name}</p>
-                                        <p>{user.email}</p>
-                                        <p className="text-sm text-gray-400 mt-4">Addresses will appear here once you checkout.</p>
-                                   </div>
-                              </div>
+                         {/* Right Column: Profile & Details */}
+                         <div className="lg:col-span-1">
+                              <AccountDetails user={user} />
                          </div>
                     </div>
                </main>
+
                <Footer />
+
+               <style jsx global>{`
+                    @keyframes fadeIn {
+                         from { opacity: 0; transform: translateY(10px); }
+                         to { opacity: 1; transform: translateY(0); }
+                    }
+                    .animate-fadeIn {
+                         animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    }
+               `}</style>
           </div>
      );
 }

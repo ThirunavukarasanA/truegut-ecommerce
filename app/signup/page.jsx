@@ -158,7 +158,6 @@ export default function SignupPage() {
                                         onError={() => {
                                              toast.error("Google Signup Failed");
                                         }}
-                                        useOneTap
                                         theme="outline"
                                         size="large"
                                         shape="circle"
