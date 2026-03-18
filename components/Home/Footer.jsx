@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 
 export default function Footer() {
+  const year = new Date().getFullYear();
   return (
     <footer className="bg-bg-color pt-16 pb-8 border-t border-white">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -114,9 +115,9 @@ export default function Footer() {
       </div>
 
       {/* Copyright */}
-      <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row items-center justify-center gap-3">
         <p className="text-gray-400 text-xs">
-          Copyright © 2025 by TrueGut. All rights reserved.
+          Copyright © {year} by TrueGut. All rights reserved.
         </p>
         <Link
           href="/privacy-policy"
