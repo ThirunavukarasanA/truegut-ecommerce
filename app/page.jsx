@@ -17,16 +17,16 @@ export const metadata = {
   openGraph: {
     title: "TrueGut",
     description: "Explore our range of organic and fermented products",
-    url: "",
-    siteName: "",
-    // images: [
-    //   {
-    //     url: "https://makecomponents.com/Image/footer/footer002.webp", // Must be an absolute URL
-    //     width: 800,
-    //     height: 600,
-    //     alt: "foote components",
-    //   },
-    // ],
+    url: "https://www.truegut.in/",
+    siteName: "TrueGut",
+    images: [
+      {
+        url: "/favicon-32x32.png", // Must be an absolute URL
+        width: 800,
+        height: 600,
+        alt: "foote components",
+      },
+    ],
     locale: "en_US",
     type: "website",
   },
@@ -38,4 +38,3 @@ export const metadata = {
 export default function Home() {
   return <HomeComponent />;
 }
-
