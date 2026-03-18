@@ -43,6 +43,7 @@ export default function ProductForm({
     description: "",
     history: "",
     microbialProfile: "",
+    usage: "",
     nutrition: "",
     shelfLifeDays: "",
     requiresColdShipping: false,
@@ -76,6 +77,7 @@ export default function ProductForm({
         description: initialData.description || "",
         history: initialData.history || "",
         microbialProfile: initialData.microbialProfile || "",
+        usage: initialData.usage || "",
         nutrition: initialData.nutrition || "",
         shelfLifeDays: initialData.shelfLifeDays || "",
         requiresColdShipping: initialData.requiresColdShipping || false,
@@ -149,6 +151,10 @@ export default function ProductForm({
     setFormData((prev) => (prev.microbialProfile === content ? prev : { ...prev, microbialProfile: content }));
   }, []);
 
+  const handleUsageChange = useCallback((content) => {
+    setFormData((prev) => (prev.usage === content ? prev : { ...prev, usage: content }));
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -184,6 +190,11 @@ export default function ProductForm({
 
     if (formData.microbialProfile?.length > 10000) {
       toast.error("Microbial Profile cannot exceed 10000 characters");
+      return;
+    }
+
+    if (formData.usage?.length > 10000) {
+      toast.error("Product Usage cannot exceed 10000 characters");
       return;
     }
 
@@ -223,6 +234,7 @@ export default function ProductForm({
     data.append("description", formData.description);
     data.append("history", formData.history);
     data.append("microbialProfile", formData.microbialProfile);
+    data.append("usage", formData.usage);
     data.append("nutrition", formData.nutrition);
     data.append("shelfLifeDays", formData.shelfLifeDays);
     data.append("requiresColdShipping", formData.requiresColdShipping);
@@ -536,6 +548,16 @@ export default function ProductForm({
                 onChange={handleMicrobialProfileChange}
                 placeholder="Details of microbial strains and benefits..."
                 icon={MdScience}
+                helperText="Formatted details"
+              />
+            </div>
+            <div className="col-span-1 md:col-span-2">
+              <AdminRichText
+                label="Product Usage"
+                value={formData.usage}
+                onChange={handleUsageChange}
+                placeholder="How to use or consume this product..."
+                icon={MdInfo}
                 helperText="Formatted details"
               />
             </div>

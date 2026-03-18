@@ -25,7 +25,7 @@ export default function Navbar() {
   const [scrollPosition, setScrollPosition] = useState(false);
   useEffect(() => {
     const handleScroll = () => {
-      setScrollPosition(window.scrollY > 50);
+      setScrollPosition(window.scrollY > 30);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -60,10 +60,11 @@ export default function Navbar() {
 
       {/* Main Header */}
       <div
-        className={`fixed w-full top-0 z-40 border-b border-gray-200 ${scrollPosition ? "shadow-lg bg-white/80 backdrop-blur" : "bg-white"
-          }`}
+        className={`fixed w-full top-0 z-40 border-b border-gray-200 ${
+          scrollPosition ? "shadow-lg bg-white/80 backdrop-blur" : "bg-white"
+        }`}
       >
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center gap-4">
+        <div className="container mx-auto px-4 flex justify-between items-center gap-4">
           {/* Logo */}
           <div className="text-2xl font-bold text-font-title flex-1 text-center md:text-left md:flex-none">
             <Link
@@ -73,12 +74,13 @@ export default function Navbar() {
               title="Home"
             >
               <Image
-                src="/logos/truegut.svg"
+                src="/logos/truegut.png"
                 alt="Logo"
-                width={50}
-                height={50}
+                width={scrollPosition ? 100 : 150}
+                height={scrollPosition ? 100 : 150}
+                className="transition-all "
               />
-              True<span className="text-secondary">gut</span>
+              {/* True<span className="text-secondary">gut</span> */}
             </Link>
           </div>
 
@@ -109,10 +111,11 @@ export default function Navbar() {
                   <Link
                     key={link.name}
                     href={link.path}
-                    className={`transition-colors ${isActive(link.path)
-                      ? "text-secondary"
-                      : "hover:text-primary"
-                      }`}
+                    className={`transition-colors ${
+                      isActive(link.path)
+                        ? "text-secondary"
+                        : "hover:text-primary"
+                    }`}
                   >
                     {link.name}
                   </Link>
@@ -133,7 +136,9 @@ export default function Navbar() {
                 <FiMapPin size={18} />
               </div>
               <div className="flex flex-col items-start -space-y-1">
-                <span className="text-[10px] font-bold text-gray-400 tracking-wider">DELIVER TO</span>
+                <span className="text-[10px] font-bold text-gray-400 tracking-wider">
+                  DELIVER TO
+                </span>
                 <span className="text-sm font-bold text-font-title group-hover:text-primary">
                   {isLocationSet ? pincode : "Set Pincode"}
                 </span>
@@ -192,20 +197,23 @@ export default function Navbar() {
 
       {/* Mobile Menu Sidebar & Overlay */}
       <div
-        className={`md:hidden fixed inset-0 z-50 transition-visibility duration-300 ${isMobileMenuOpen ? "visible" : "invisible"
-          }`}
+        className={`md:hidden fixed inset-0 z-50 transition-visibility duration-300 ${
+          isMobileMenuOpen ? "visible" : "invisible"
+        }`}
       >
         {/* Overlay */}
         <div
-          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${isMobileMenuOpen ? "opacity-100" : "opacity-0"
-            }`}
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${
+            isMobileMenuOpen ? "opacity-100" : "opacity-0"
+          }`}
           onClick={toggleMobileMenu}
         ></div>
 
         {/* Sidebar Drawer */}
         <div
-          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-            }`}
+          className={`absolute top-0 right-0 w-3/4 max-w-[300px] h-full bg-white shadow-xl transition-transform duration-300 ease-in-out transform ${
+            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
         >
           <div className="flex flex-col h-full">
             {/* Sidebar Header */}
@@ -246,10 +254,11 @@ export default function Navbar() {
                   <Link
                     key={link.name}
                     href={link.path}
-                    className={`px-6 py-3 font-medium border-l-4 transition-all ${isActive(link.path)
-                      ? "text-primary bg-primary/5 border-primary"
-                      : "text-gray-700 hover:bg-gray-50 hover:text-primary border-transparent hover:border-primary"
-                      }`}
+                    className={`px-6 py-3 font-medium border-l-4 transition-all ${
+                      isActive(link.path)
+                        ? "text-primary bg-primary/5 border-primary"
+                        : "text-gray-700 hover:bg-gray-50 hover:text-primary border-transparent hover:border-primary"
+                    }`}
                     onClick={toggleMobileMenu}
                   >
                     {link.name}

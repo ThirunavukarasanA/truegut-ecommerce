@@ -13,11 +13,11 @@ export default function ProductCard({ product }) {
   return (
     <div className="group bg-white rounded-3xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col relative">
       {/* Supplier Tag */}
-      <div className="absolute top-6 left-6 z-10">
+      {/* <div className="absolute top-6 left-6 z-10">
         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-white/80 backdrop-blur-sm px-2 py-1 rounded-full">
           SUPPLIER ALPHA (ZONE 1)
         </span>
-      </div>
+      </div> */}
 
       {/* Image Container */}
       <div className="relative rounded-2xl overflow-hidden mb-6 aspect-4/3 w-full bg-gray-50">
@@ -49,7 +49,7 @@ export default function ProductCard({ product }) {
         </Link>
 
         {/* Price and Action Row */}
-        <div className="mt-auto flex items-end justify-between">
+        <div className="mt-auto flex flex-col space-y-3">
           <div className="flex flex-col gap-1">
             <span className="font-bold text-font-title text-2xl">
               ₹{product.price}
@@ -62,7 +62,7 @@ export default function ProductCard({ product }) {
             </Link>
           </div>
 
-          {product.totalStock > 0 ? (
+          {/* {product.totalStock > 0 ? (
             <button
               onClick={() => addToCart(product)}
               className="bg-secondary text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
@@ -76,7 +76,13 @@ export default function ProductCard({ product }) {
             >
               STOCK REQUEST
             </Link>
-          )}
+          )} */}
+          <Link
+            href={`/collections/${product.slug}`}
+            className="bg-secondary text-white text-center text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
+          >
+            VIEW PRODUCT
+          </Link>
         </div>
       </div>
     </div>

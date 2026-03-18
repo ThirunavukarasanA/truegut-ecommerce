@@ -111,6 +111,7 @@ export async function POST(req) {
       description: getValue("description"),
       history: getValue("history"),
       microbialProfile: getValue("microbialProfile"),
+      usage: getValue("usage"),
       shelfLifeDays: getValue("shelfLifeDays")
         ? parseInt(getValue("shelfLifeDays"))
         : undefined,

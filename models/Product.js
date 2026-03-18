@@ -38,6 +38,11 @@ const ProductSchema = new mongoose.Schema(
       maxlength: [10000, "Microbial Profile cannot exceed 10000 characters"],
     },
 
+    usage: {
+      type: String,
+      maxlength: [10000, "Usage cannot exceed 10000 characters"],
+    },
+
     fermentation: {
       type: {
         type: String,

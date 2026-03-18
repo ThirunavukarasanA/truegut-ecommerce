@@ -1,47 +1,61 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
-const SLIDES = [
+const FALLBACK_SLIDES = [
   {
-    id: 1,
-    image: "/images/banners/banner3.jpg",
-    subheading: "Medical-Grade Cultures",
-    heading: "Bio-Active Marketplace",
-    description:
-      "Flat 20% Discount Auto-Applied + Wallet Benefits.",
-    buttonText: "",
-  },
-  {
-    id: 2,
-    image: "/images/banners/banner3.jpg",
-    subheading: "Best Summer Offer",
-    heading: "HEALTHY",
-    description:
-      "Get the best organic vegetables and fruits directly from the farm to your table.",
-    buttonText: "",
+    _id: "1",
+    image: { url: "/images/banners/banner3.jpg" },
+    title: "Bio-Active Marketplace",
+    link: "",
   },
 ];
 
 export default function Hero() {
+  const [slides, setSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBanners() {
+      try {
+        const res = await fetch("/api/banners");
+        const data = await res.json();
+        if (data.success && data.banners.length > 0) {
+          setSlides(data.banners);
+        } else {
+          setSlides(FALLBACK_SLIDES);
+        }
+      } catch (error) {
+        console.error("Failed to fetch banners", error);
+        setSlides(FALLBACK_SLIDES);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBanners();
+  }, []);
 
   // Auto-slide effect
   useEffect(() => {
+    if (slides.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000); // 5 seconds per slide
 
     return () => clearInterval(interval);
-  }, []);
+  }, [slides.length]);
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
+    if (slides.length <= 1) return;
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
+    if (slides.length <= 1) return;
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   // Touch handling for swipe
@@ -73,11 +87,19 @@ export default function Hero() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="w-full max-w-7xl md:rounded-4xl mx-auto mt-28 md:mt-32 relative overflow-hidden h-[300px] md:h-[500px] sm:h-[300px] flex items-center justify-center bg-gray-100 animate-pulse"></div>
+    );
+  }
+
+  if (slides.length === 0) return null;
+
   return (
     <div
-      className="w-full max-w-7xl md:rounded-4xl mx-auto mt-20 md:mt-32 relative overflow-hidden h-[300px] md:h-[500px] sm:h-[300px] flex items-center group bg-bg-color"
+      className="w-full max-w-7xl md:rounded-4xl mx-auto mt-28 md:mt-32 relative overflow-hidden h-[200px] md:h-[500px] sm:h-[300px] flex items-center group bg-bg-color"
       onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove} 
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
       {/* Carousel Container */}
@@ -85,71 +107,72 @@ export default function Hero() {
         className="absolute inset-0 flex transition-transform duration-1000 ease-in-out h-full"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
-        {SLIDES.map((slide) => (
+        {slides.map((slide) => (
           <div
-            key={slide.id}
+            key={slide._id}
             className="min-w-full h-full relative flex items-center"
           >
-            {/* Background Image */}
-            <div className="absolute inset-0 w-full h-full z-0">
-              <Image
-                src={slide.image}
-                alt={slide.heading}
-                fill
-                className="object-cover object-center md:object-right"
-                priority={slide.id === 1}
-              />
-            </div>
-
-            {/* Content Overlay */}
-            <div className="container mx-auto px-20 relative z-10 grid grid-cols-1 md:grid-cols-2 h-full items-center">
-              <div className="max-w-lg space-y-4 md:space-y-6 pt-10 md:pt-0 text-center md:text-left flex flex-col items-center md:items-start">
-                <h3 className="text-white font-jark italic py-2 px-4 bg-secondary rounded-full font-bold tracking-wide text-xs md:text-xs uppercase animate-fade-in-up">
-                  {slide.subheading}
-                </h3>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-semibold text-white font-jark italic tracking-tight leading-tighter animate-fade-in-up delay-100">
-                  {slide.heading}
-                </h1>
-                <p className="text-white/20 font-jark italic text-sm md:text-base leading-relaxed max-w-md mx-auto md:mx-0 animate-fade-in-up delay-200 lg:pr-10">
-                  {slide.description}
-                </p>
-                {slide.buttonText &&
-                  <button className="bg-secondary hover:bg-primary text-white px-8 py-3 text-sm font-bold uppercase tracking-wider hover:bg-opacity-90 transition-colors rounded-sm shadow-lg shadow-secondary/20 animate-fade-in-up">
-                    {slide.buttonText}
-                  </button>}
+            {/* Conditional wrapper if link exists */}
+            {slide.link ? (
+              <Link
+                href={slide.link}
+                target={slide.target || "_self"}
+                className="absolute inset-0 w-full h-full z-10 cursor-pointer"
+              >
+                <Image
+                  src={slide.image?.url || slide.image}
+                  alt={slide.altText || slide.title || "Banner"}
+                  fill
+                  className=""
+                  priority={slide._id === slides[0]?._id}
+                />
+              </Link>
+            ) : (
+              <div className="absolute inset-0 w-full h-full z-0">
+                <Image
+                  src={slide.image?.url || slide.image}
+                  alt={slide.altText || slide.title || "Banner"}
+                  width={1920}
+                  height={600}
+                  className=" "
+                  priority={slide._id === slides[0]?._id}
+                />
               </div>
-              {/* Empty column for spacing against the image subject */}
-              <div></div>
-            </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-secondary text-white flex items-center justify-center rounded-sm hover:bg-opacity-80 transition-all z-20 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 duration-300 hidden md:flex"
-      >
-        <FiChevronLeft size={20} />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-secondary text-white flex items-center justify-center rounded-sm hover:bg-opacity-80 transition-all z-20 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 duration-300 hidden md:flex"
-      >
-        <FiChevronRight size={20} />
-      </button>
-
-      {/* Dots Indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-        {SLIDES.map((_, index) => (
+      {/* Navigation Arrows (only show if multiple slides) */}
+      {slides.length > 1 && (
+        <>
           <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-2 h-2 rounded-full cursor-pointer transition-all ${currentSlide === index ? "bg-secondary w-6" : "bg-white"
-              }`}
-          />
-        ))}
-      </div>
+            onClick={prevSlide}
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-secondary text-white items-center justify-center rounded-sm hover:bg-opacity-80 transition-all z-20 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 duration-300 hidden md:flex"
+          >
+            <FiChevronLeft size={20} />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-secondary text-white items-center justify-center rounded-sm hover:bg-opacity-80 transition-all z-20 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 duration-300 hidden md:flex"
+          >
+            <FiChevronRight size={20} />
+          </button>
+
+          {/* Dots Indicator */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-2 h-2 rounded-full cursor-pointer transition-all ${
+                  currentSlide === index ? "bg-secondary w-6" : "bg-white"
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
