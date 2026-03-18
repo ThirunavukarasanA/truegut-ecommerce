@@ -14,6 +14,7 @@ export const metadata = {
       url: "../favicon.ico",
     },
   },
+  metadataBase: new URL("https://www.truegut.in"),
   openGraph: {
     title: "TrueGut",
     description: "Explore our range of organic and fermented products",
@@ -21,18 +22,17 @@ export const metadata = {
     siteName: "TrueGut",
     images: [
       {
-        url: "/favicon-32x32.png", // Must be an absolute URL
+        url: "/logos/truegut_icon.png",
         width: 800,
         height: 600,
-        alt: "foote components",
+        alt: "TrueGut | Fermentaa | Organic | Fermented | Collections",
       },
     ],
     locale: "en_US",
     type: "website",
   },
-  // metadataBase: new URL(``),
   alternates: {
-    canonical: "",
+    canonical: "/",
   },
 };
 export default function Home() {
