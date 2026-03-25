@@ -1,6 +1,7 @@
 import React from "react";
+import { FiMapPin } from "react-icons/fi";
 
-export default function ShippingForm({ formData, handleChange, handleBlur, pincode, district }) {
+export default function ShippingForm({ formData, handleChange, handleBlur, pincode, district, handleLocateMe, locating }) {
      return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
                <div className="grid grid-cols-2 gap-4">
@@ -94,7 +95,18 @@ export default function ShippingForm({ formData, handleChange, handleBlur, pinco
                </div>
 
                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                    <div className="flex items-center justify-between mb-1">
+                         <label className="block text-sm font-medium text-gray-700">Zip Code</label>
+                         <button
+                              type="button"
+                              onClick={handleLocateMe}
+                              disabled={locating}
+                              className="text-xs text-primary font-bold hover:underline flex items-center gap-1 disabled:opacity-50 transition-all"
+                         >
+                              <FiMapPin size={12} />
+                              {locating ? "Locating..." : "Use Current Location"}
+                         </button>
+                    </div>
                     <input
                          type="text"
                          inputMode="numeric"

@@ -65,10 +65,9 @@ export default function CheckoutPage() {
      useEffect(() => {
           // Guard: Only update form from context if they are actually different
           // This prevents the context -> form -> context loop
-          if ((pincode && pincode !== formData.zipLevel) || (district && district !== formData.city)) {
+          if (pincode && pincode !== formData.zipLevel) {
                setFormData(prev => ({
                     ...prev,
-                    city: district || prev.city,
                     zipLevel: pincode || prev.zipLevel
                }));
           }
@@ -76,15 +75,12 @@ export default function CheckoutPage() {
 
      useEffect(() => {
           const fetchLocationDetails = async () => {
-               // Guard: Only fetch if it's a 6-digit zip AND it's different from what we already have in context
-               // This prevents redundant /api/location calls when navigating to checkout
-               if (formData.zipLevel.length === 6 && formData.zipLevel !== pincode) {
+               if (formData.zipLevel.length === 6) {
                     try {
                          const res = await fetch(`/api/location/${formData.zipLevel}`);
                          const data = await res.json();
                          if (data.serviceable) {
-                              // Sync with Global Location Context using NEW object signature
-                              if (updateLocation) {
+                              if (updateLocation && formData.zipLevel !== pincode) {
                                    updateLocation({
                                         pincode: formData.zipLevel,
                                         postOffice: data.postOffices?.[0] || "",
@@ -93,7 +89,6 @@ export default function CheckoutPage() {
                                         isServiceable: true
                                    });
                               }
-
                               setFormData(prev => ({
                                    ...prev,
                                    city: data.district || prev.city,
@@ -107,8 +102,45 @@ export default function CheckoutPage() {
                     }
                }
           };
-          fetchLocationDetails();
-     }, [formData.zipLevel, updateLocation, pincode]); // Added pincode to deps for guard
+          // Always try fetching if city or state is missing, or if zip changed
+          if (formData.zipLevel.length === 6 && (!formData.city || !formData.state || formData.zipLevel !== pincode)) {
+               fetchLocationDetails();
+          }
+     }, [formData.zipLevel, formData.city, formData.state, pincode, updateLocation]);
+
+     const [locating, setLocating] = useState(false);
+     const handleLocateMe = () => {
+          if (!navigator.geolocation) {
+               toast.error("Geolocation is not supported by your browser");
+               return;
+          }
+          setLocating(true);
+          toast.loading("Locating...", { id: "loc" });
+          navigator.geolocation.getCurrentPosition(
+               async (position) => {
+                    try {
+                         const { latitude, longitude } = position.coords;
+                         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                         const data = await res.json();
+                         const extractedPin = data?.address?.postcode;
+                         if (extractedPin) {
+                              setFormData(prev => ({ ...prev, zipLevel: extractedPin }));
+                              toast.success("Location found!", { id: "loc" });
+                         } else {
+                              toast.error("Could not determine pincode from location.", { id: "loc" });
+                         }
+                    } catch (err) {
+                         toast.error("Location lookup failed.", { id: "loc" });
+                    } finally {
+                         setLocating(false);
+                    }
+               },
+               (err) => {
+                    toast.error("Permission denied or location unavailable.", { id: "loc" });
+                    setLocating(false);
+               }
+          );
+     };
 
 
      const handleChange = (e) => {
@@ -168,13 +200,15 @@ export default function CheckoutPage() {
                               <AuthBridge user={user} />
 
                               <form onSubmit={handleSubmit}>
-                                   <ShippingForm
-                                        formData={formData}
-                                        handleChange={handleChange}
-                                        handleBlur={handleBlur}
-                                        pincode={pincode}
-                                        district={district}
-                                   />
+                                    <ShippingForm
+                                         formData={formData}
+                                         handleChange={handleChange}
+                                         handleBlur={handleBlur}
+                                         pincode={pincode}
+                                         district={formData.city}
+                                         handleLocateMe={handleLocateMe}
+                                         locating={locating}
+                                    />
 
                                    <PaymentSelector
                                         paymentMethod={paymentMethod}
