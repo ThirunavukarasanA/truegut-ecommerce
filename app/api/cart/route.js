@@ -203,6 +203,9 @@ export async function PUT(req) {
       if (quantity <= 0) {
         cart.items.splice(itemIndex, 1);
       } else {
+        const item = cart.items[itemIndex];
+        const vId = item.variantId || variantId;
+
         if (vId) {
           const vendorId = req.headers.get("x-vendor-id");
           const now = new Date();
