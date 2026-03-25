@@ -9,7 +9,7 @@ import { CgSpinner } from "react-icons/cg";
 import { motion, AnimatePresence } from "framer-motion";
 import ShippingReturnsModal from "./ShippingReturnsModal";
 
-export default function PincodeChecker() {
+export default function PincodeChecker({ onVerificationSuccess }) {
   const {
     pincode: storedPincode,
     updateLocation,
@@ -64,11 +64,13 @@ export default function PincodeChecker() {
         });
 
         toast.success(`Serviceable at ${pincode}`);
+        if (onVerificationSuccess) {
+          setTimeout(() => onVerificationSuccess(), 1000);
+        }
       } else {
         setServiceable(false);
         setError("Not available for this location");
-        // Explicitly update context that this pincode is NOT serviceable
-        await updateLocation({ pincode, isServiceable: false });
+        clearLocation();
       }
     } catch (err) {
       console.error("Pincode check error:", err);

@@ -5,9 +5,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { FiShoppingBag, FiHeart, FiEye } from "react-icons/fi";
 import { useCart } from "../../context/CartContext";
+import { useLocation } from "../../context/LocationContext";
+import { toast } from "react-hot-toast";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
+  const { pincode, isServiceable, openModal } = useLocation();
+
+  const handleAddToCart = () => {
+    if (!isServiceable) {
+      toast.error(
+        pincode
+          ? "This location is currently not serviceable. Please try another pincode."
+          : "Please enter your pincode to check availability",
+        { icon: "📍" }
+      );
+      openModal();
+      return;
+    }
+    addToCart(product);
+  };
   ("product : ", product);
 
   return (
@@ -77,12 +94,18 @@ export default function ProductCard({ product }) {
               STOCK REQUEST
             </Link>
           )} */}
-          <Link
+          {/* <Link
             href={`/collections/${product.slug}`}
             className="bg-secondary text-white text-center text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
           >
             VIEW PRODUCT
-          </Link>
+          </Link> */}
+          <button
+            onClick={handleAddToCart}
+            className="bg-secondary text-white text-xs font-bold py-3 px-6 rounded-lg uppercase tracking-wider hover:bg-primary transition-colors"
+          >
+            ADD TO BAG
+          </button>
         </div>
       </div>
     </div>

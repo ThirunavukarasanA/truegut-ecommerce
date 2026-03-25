@@ -26,7 +26,7 @@ export default function OrderSummary({ cartItems, updateItemQuantity, subtotal, 
                                              <button
                                                   onClick={() => updateItemQuantity(item.id, item.variantId, item.quantity - 1)}
                                                   className="text-gray-400 hover:text-primary disabled:opacity-30"
-                                                  disabled={item.quantity <= 1 || loading}
+                                                  disabled={loading}
                                              >
                                                   <FiMinus size={14} />
                                              </button>

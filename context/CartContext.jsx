@@ -265,6 +265,9 @@ export function CartProvider({ children }) {
   };
 
   const updateItemQuantity = async (itemId, variantId, quantity) => {
+    if (quantity < 1) {
+      return removeFromCart(itemId, variantId);
+    }
     setLoading(true);
     try {
       const endpoint = user ? "/api/cart" : "/api/temp-cart";

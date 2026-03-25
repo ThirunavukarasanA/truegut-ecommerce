@@ -93,7 +93,7 @@ export default function CartPage() {
                                                             <button
                                                                  onClick={() => updateItemQuantity(item.id, item.variantId, item.quantity - 1)}
                                                                  className="px-3 py-2 text-gray-600 hover:text-primary transition-colors disabled:opacity-50"
-                                                                 disabled={loading || item.quantity <= 1}
+                                                                 disabled={loading}
                                                             >
                                                                  <FiMinus size={14} />
                                                             </button>

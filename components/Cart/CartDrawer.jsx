@@ -22,7 +22,6 @@ export default function CartDrawer() {
   }, [isCartOpen]);
 
   const handleUpdateQuantity = async (item, newQuantity) => {
-    if (newQuantity < 1) return;
     await updateItemQuantity(item.id, item.variantId, newQuantity);
   };
 
@@ -110,8 +109,7 @@ export default function CartDrawer() {
                         <div className="flex items-center border border-gray-200 rounded-md">
                           <button
                             onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
-                            className="px-2 py-1 text-gray-500 hover:text-primary disabled:opacity-50"
-                            disabled={item.quantity <= 1}
+                            className="px-2 py-1 text-gray-500 hover:text-primary transition-colors"
                           >
                             <FiMinus size={12} />
                           </button>
